@@ -33,8 +33,6 @@ namespace nbi
             width  = sf::VideoMode::getDesktopMode().width*0.8;
             height = sf::VideoMode::getDesktopMode().height*0.8;
             window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow(sf::VideoMode(width, height), "SFML works!"));
-            
-            current_camera.center = sf::Vector2f(0.5*width,0.5*height);
             // later: call this in a thread loop
             this->poll_loop();
         }
@@ -61,12 +59,12 @@ namespace nbi
             }
             if(event.type == sf::Event::MouseMoved)
             {
+                set_last_mouse_position();
                 if (mouse_pressed[sf::Mouse::Right])
                 {
                     //todo: introduce world coordinates
                     sf::Vector2i dx = get_mouse_position() - last_mouse_position;
                     current_camera.increment_px(dx);
-                    set_last_mouse_position();
                 }
             }
         }
@@ -93,12 +91,19 @@ namespace nbi
         
         void render()
         {
+            sf::Transform screen_offset = sf::Transform::Identity;
+            auto win_size = window->getSize();
+            screen_offset.translate(0.5*(float)win_size.x, 0.5*(float)win_size.y);
+            
             float r = 100.0;
             sf::CircleShape shape(r);
-            shape.setPosition(current_camera.center.x - r, current_camera.center.y - r);
+            
+            sf::CircleShape shape2(r);
             shape.setFillColor(sf::Color::Green);
+            
             window->clear(root_style.back_color);
-            window->draw(shape);
+            window->draw(shape, screen_offset);
+            
             window->display();
         }
         
