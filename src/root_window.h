@@ -4,7 +4,10 @@
 #include <thread>
 #include <map>
 
+#include <SFML/Graphics.hpp>
+
 #include "style.h"
+#include "camera.h"
 #include "nabu_instance.h"
 
 namespace nbi
@@ -21,9 +24,9 @@ namespace nbi
         std::map<mouse_button_type, bool> mouse_pressed;
         
         int width, height;
-        sf::Vector2f focus_position;
+        
+        camera_t current_camera;
         sf::Vector2i last_mouse_position;
-        float px_per_unit = 20.0;
         
         root_window_t()
         {
@@ -31,7 +34,7 @@ namespace nbi
             height = sf::VideoMode::getDesktopMode().height*0.8;
             window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow(sf::VideoMode(width, height), "SFML works!"));
             
-            focus_position = sf::Vector2f(0.5*width,0.5*height);
+            current_camera.center = sf::Vector2f(0.5*width,0.5*height);
             // later: call this in a thread loop
             this->poll_loop();
         }
@@ -58,12 +61,11 @@ namespace nbi
             }
             if(event.type == sf::Event::MouseMoved)
             {
-                if (mouse_pressed[sf::Mouse::Left])
+                if (mouse_pressed[sf::Mouse::Right])
                 {
                     //todo: introduce world coordinates
                     sf::Vector2i dx = get_mouse_position() - last_mouse_position;
-                    focus_position.x += dx.x;
-                    focus_position.y += dx.y;
+                    current_camera.increment_px(dx);
                     set_last_mouse_position();
                 }
             }
@@ -93,7 +95,7 @@ namespace nbi
         {
             float r = 100.0;
             sf::CircleShape shape(r);
-            shape.setPosition(focus_position.x - r, focus_position.y - r);
+            shape.setPosition(current_camera.center.x - r, current_camera.center.y - r);
             shape.setFillColor(sf::Color::Green);
             window->clear(root_style.back_color);
             window->draw(shape);
