@@ -6,7 +6,7 @@ bin_dir := ${mkfile_dir}/bin
 front_end := nbi
 launcher := nbilaunch.x
 main: setup
-	g++ -std=c++20 -I./src -I${PTL}/include main.cc -o ${bin_dir}/${launcher} -lsfml-graphics -lsfml-window -lsfml-system -L ${PTL}/lib -lPTL
+	g++ -std=c++20 -I./src -I${PTL}/include -I${NABU}/src main.cc -o ${bin_dir}/${launcher} -lsfml-graphics -lsfml-window -lsfml-system -L ${PTL}/lib -lPTL
 
 setup:
 	mkdir -p ${bin_dir}
