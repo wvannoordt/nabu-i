@@ -12,6 +12,7 @@
 #include "style.h"
 #include "camera.h"
 #include "nabu_instance.h"
+#include "shape_buffer.h"
 
 namespace nbi
 {
@@ -30,6 +31,9 @@ namespace nbi
         
         camera_t current_camera;
         sf::Vector2i last_mouse_position;
+        
+        shape_buffer_t edge_layer;
+        shape_buffer_t shape_layer;
         
         root_window_t()
         {
