@@ -9,6 +9,7 @@ namespace nbi
     struct camera_t
     {
         sf::Vector2f center;
+        sf::Vector2f zoom_center;
         float zoom_factor;
         sf::Transform cam_trans;
         sf::Transform cam_rot;
@@ -21,6 +22,7 @@ namespace nbi
             zoom_sensitivity = 2.0;
             zoom_factor = 0.0;
             dz = 0.5;
+            zoom_center = sf::Vector2f(0,0);
             center = sf::Vector2f(0,0);
             cam_trans = sf::Transform::Identity;
             cam_scale = sf::Transform::Identity;
@@ -29,15 +31,29 @@ namespace nbi
         
         void zoom_in()
         {
+            float zprev = px_per_unit();
             zoom_factor += dz;
             cam_scale = sf::Transform::Identity;
             cam_scale.scale(px_per_unit(), px_per_unit());
+            float znew = px_per_unit();
+            sf::Vector2f dx = (center-zoom_center)/(znew-zprev);
+            // print(dx.x, dx.y);
+            // cam_trans = sf::Transform::Identity;
+            // cam_trans.translate(center);
+            // center += dx;
         }
         void zoom_out()
         {
+            float zprev = px_per_unit();
             zoom_factor -= dz;
             cam_scale = sf::Transform::Identity;
             cam_scale.scale(px_per_unit(), px_per_unit());
+            float znew = px_per_unit();
+            sf::Vector2f dx = (center-zoom_center)/(znew-zprev);
+            // print(dx.x, dx.y);
+            // cam_trans = sf::Transform::Identity;
+            // cam_trans.translate(center);
+            // center += dx;
         }
         
         float px_per_unit() const
@@ -53,6 +69,14 @@ namespace nbi
             cam_trans.translate(center);
         }
         
-        const sf::Transform& get_transform() const {return cam_trans;}
+        void set_zoom_center(const sf::Vector2f& cen)
+        {
+            zoom_center = cen;
+        }
+        
+        sf::Transform get_transform() const
+        {
+            return cam_scale * cam_trans;
+        }
     };
 }

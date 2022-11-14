@@ -15,6 +15,7 @@ namespace nbi
             //todo: check if we can get away with avoiding object slicing here
             auto output = new shape_t(params...);
             shapes.push_back(output);
+            return output;
         }
         
         ~shape_buffer_t()

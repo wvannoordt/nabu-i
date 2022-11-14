@@ -31,9 +31,12 @@ namespace nbi
         
         camera_t current_camera;
         sf::Vector2i last_mouse_position;
+        sf::Vector2f last_mouse_coords;
         
         shape_buffer_t edge_layer;
         shape_buffer_t shape_layer;
+        
+        nabu::machine_t machine;
         
         root_window_t()
         {
@@ -58,6 +61,15 @@ namespace nbi
             {
                 mouse_pressed[event.mouseButton.button] = true;
                 set_last_mouse_position();
+                if(event.mouseButton.button == sf::Mouse::Left)
+                {
+                    float r = 0.5;
+                    auto newShape = shape_layer.add<sf::CircleShape>(r);
+                    newShape->setOutlineThickness(0.05*r);
+                    newShape->setPosition(last_mouse_coords.x - r, last_mouse_coords.y - r);
+                    newShape->setFillColor(sf::Color::Green);
+                    newShape->setOutlineColor(sf::Color::Black);
+                }
             }
             if (event.type == sf::Event::MouseButtonReleased)
             {
@@ -73,6 +85,7 @@ namespace nbi
                     current_camera.increment_px(dx);
                 }
                 set_last_mouse_position();
+                current_camera.set_zoom_center(last_mouse_coords);
             }
             if (event.type == sf::Event::MouseWheelScrolled)
             {
@@ -85,6 +98,29 @@ namespace nbi
             }
         }
         
+        sf::Transform get_screen_transform() const
+        {
+            sf::Transform screen_offset = sf::Transform::Identity;
+            auto win_size = window->getSize();
+            
+            //this corresponds to setting the 0,0 coordinate at the screen center
+            screen_offset.translate(0.4*(float)win_size.x, 0.4*(float)win_size.y);
+            return screen_offset;
+        }
+        
+        sf::Transform world_to_screen() const
+        {
+            auto scr = get_screen_transform();
+            sf::Transform output = scr*current_camera.get_transform();
+            return output;
+        }
+        
+        sf::Transform screen_to_world() const
+        {
+            auto trs = world_to_screen();
+            return trs.getInverse();
+        }
+        
         sf::Vector2i get_mouse_position()
         {
             return sf::Mouse::getPosition(*window);
@@ -93,6 +129,9 @@ namespace nbi
         void set_last_mouse_position()
         {
             last_mouse_position = get_mouse_position();
+            sf::Transform trs = screen_to_world();
+            sf::Vector2f mpf((float)last_mouse_position.x, (float)last_mouse_position.y);
+            last_mouse_coords = trs.transformPoint(mpf);
         }
         
         void on_close()
@@ -107,35 +146,12 @@ namespace nbi
         
         void render()
         {
-            sf::Transform screen_offset = sf::Transform::Identity;
-            auto win_size = window->getSize();
-            
-            //this corresponds to setting the 0,0 coordinate at the screen center
-            screen_offset.translate(0.4*(float)win_size.x, 0.4*(float)win_size.y);
-
-            // float r = 0.5;
-            // sf::CircleShape shape(r);
-            // sf::CircleShape shape2(r);
-            // shape.setPosition(0,0);
-            // shape2.setPosition(1.0,1.0);
-            // 
-            // shape.setOutlineThickness(0.05*r);
-            // shape.setOutlineColor(sf::Color::Black);
-            // 
-            // shape2.setOutlineThickness(0.05*r);
-            // shape2.setOutlineColor(sf::Color::Black);
-            
-            sf::Transform total_transform = screen_offset * current_camera.cam_scale * current_camera.cam_trans;
-            // shape.setFillColor(sf::Color::Green);
-            // shape2.setFillColor(sf::Color::Red);
-            
             window->clear(root_style.back_color);
             
-            nabu::gate_t org(nabu::op_or);
-            gate_handle_t pp(org);
+            shape_layer.draw(*window, world_to_screen());
             
-            // window->draw(shape, total_transform);
-            // window->draw(shape2, total_transform);
+            // nabu::gate_t org(nabu::op_or);
+            // gate_handle_t pp(org);
             
             window->display();
         }
