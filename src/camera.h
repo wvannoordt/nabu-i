@@ -12,48 +12,58 @@ namespace nbi
         sf::Vector2f zoom_center;
         float zoom_factor;
         sf::Transform cam_trans;
+        sf::Transform win_trans;
         sf::Transform cam_rot;
         sf::Transform cam_scale;
-        float dz;
         float zoom_sensitivity;
+        int win_width, win_height;
         
-        camera_t()
+        camera_t(){}
+        camera_t(const int& wid, const int& hei)
         {
-            zoom_sensitivity = 2.0;
+            zoom_sensitivity = 1.5;
             zoom_factor = 0.0;
-            dz = 0.5;
             zoom_center = sf::Vector2f(0,0);
             center = sf::Vector2f(0,0);
             cam_trans = sf::Transform::Identity;
             cam_scale = sf::Transform::Identity;
             cam_scale.scale(px_per_unit(), px_per_unit());
+            win_width = wid;
+            win_height = hei;
+            win_trans.translate(0.5*win_width, 0.5*win_height);
         }
         
         void zoom_in()
         {
             float zprev = px_per_unit();
-            zoom_factor += dz;
+            zoom_factor += zoom_sensitivity;
             cam_scale = sf::Transform::Identity;
             cam_scale.scale(px_per_unit(), px_per_unit());
             float znew = px_per_unit();
-            sf::Vector2f dx = (center-zoom_center)/(znew-zprev);
-            // print(dx.x, dx.y);
-            // cam_trans = sf::Transform::Identity;
-            // cam_trans.translate(center);
-            // center += dx;
+            float theta = zprev/znew;
+            sf::Vector2f new_center;
+            //I can't quite account for the neative sign here...
+            new_center.x = theta*center.x - (1.0 - theta)*zoom_center.x;
+            new_center.y = theta*center.y - (1.0 - theta)*zoom_center.y;
+            center = new_center;
+            cam_trans = sf::Transform::Identity;
+            cam_trans.translate(center);
         }
         void zoom_out()
         {
             float zprev = px_per_unit();
-            zoom_factor -= dz;
+            zoom_factor -= zoom_sensitivity;
             cam_scale = sf::Transform::Identity;
             cam_scale.scale(px_per_unit(), px_per_unit());
             float znew = px_per_unit();
-            sf::Vector2f dx = (center-zoom_center)/(znew-zprev);
-            // print(dx.x, dx.y);
-            // cam_trans = sf::Transform::Identity;
-            // cam_trans.translate(center);
-            // center += dx;
+            float theta = zprev/znew;
+            sf::Vector2f new_center;
+            //I can't quite account for the neative sign here...
+            new_center.x = theta*center.x - (1.0 - theta)*zoom_center.x;
+            new_center.y = theta*center.y - (1.0 - theta)*zoom_center.y;
+            center = new_center;
+            cam_trans = sf::Transform::Identity;
+            cam_trans.translate(center);
         }
         
         float px_per_unit() const
@@ -76,7 +86,7 @@ namespace nbi
         
         sf::Transform get_transform() const
         {
-            return cam_scale * cam_trans;
+            return win_trans * cam_scale * cam_trans;
         }
     };
 }

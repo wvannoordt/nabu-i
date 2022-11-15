@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "nabu_instance.h"
 #include "shape_buffer.h"
+#include "gate_placer.h"
 
 namespace nbi
 {
@@ -38,38 +39,54 @@ namespace nbi
         
         nabu::machine_t machine;
         
+        gate_placer_t gate_placer;
+        
         root_window_t()
         {
             width  = sf::VideoMode::getDesktopMode().width*0.8;
             height = sf::VideoMode::getDesktopMode().height*0.8;
             window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow(sf::VideoMode(width, height), "NABU Interactive"));
+            reset_camera();
             // later: call this in a thread loop
             this->poll_loop();
         }
         
+        void debug_func()
+        {
+            float r = 0.5;
+            float x = 0;
+            float y = 0;
+            auto newShape = shape_layer.add<sf::CircleShape>(r, 3);
+            newShape->rotate(90.0);
+            newShape->setOutlineThickness(0.05*r);
+            newShape->setPosition(x - r, y - r);
+            newShape->setFillColor(sf::Color::Blue);
+            newShape->setOutlineColor(sf::Color::Black);
+        }
+        
+        void reset_camera()
+        {
+            current_camera = camera_t(window->getSize().x, window->getSize().y);
+            set_last_mouse_position();
+        }
+        
         void handle_event(const sf::Event& event)
         {
+            gate_placer.handle_event(event, shape_layer, last_mouse_coords);
             if (event.type == sf::Event::Closed) on_close();
             if (event.type == sf::Event::KeyPressed)
             {
                 //todo: handle this elegantly
                 key_pressed[event.key.code] = true;
                 if (event.key.code == sf::Keyboard::W && event.key.control) on_close();
+                if (event.key.code == sf::Keyboard::D) debug_func();
+                if (event.key.code == sf::Keyboard::R && event.key.control) reset_camera();
             }
             if (event.type == sf::Event::KeyReleased) key_pressed[event.key.code] = false;
             if (event.type == sf::Event::MouseButtonPressed)
             {
                 mouse_pressed[event.mouseButton.button] = true;
                 set_last_mouse_position();
-                if(event.mouseButton.button == sf::Mouse::Left)
-                {
-                    float r = 0.5;
-                    auto newShape = shape_layer.add<sf::CircleShape>(r);
-                    newShape->setOutlineThickness(0.05*r);
-                    newShape->setPosition(last_mouse_coords.x - r, last_mouse_coords.y - r);
-                    newShape->setFillColor(sf::Color::Green);
-                    newShape->setOutlineColor(sf::Color::Black);
-                }
             }
             if (event.type == sf::Event::MouseButtonReleased)
             {
@@ -95,24 +112,13 @@ namespace nbi
                     if (delta < 0) current_camera.zoom_out();
                     if (delta > 0) current_camera.zoom_in();
                 }
+                set_last_mouse_position();
             }
-        }
-        
-        sf::Transform get_screen_transform() const
-        {
-            sf::Transform screen_offset = sf::Transform::Identity;
-            auto win_size = window->getSize();
-            
-            //this corresponds to setting the 0,0 coordinate at the screen center
-            screen_offset.translate(0.4*(float)win_size.x, 0.4*(float)win_size.y);
-            return screen_offset;
         }
         
         sf::Transform world_to_screen() const
         {
-            auto scr = get_screen_transform();
-            sf::Transform output = scr*current_camera.get_transform();
-            return output;
+            return current_camera.get_transform();
         }
         
         sf::Transform screen_to_world() const
@@ -149,7 +155,7 @@ namespace nbi
             window->clear(root_style.back_color);
             
             shape_layer.draw(*window, world_to_screen());
-            
+            gate_placer.draw(*window, world_to_screen(), last_mouse_coords);
             // nabu::gate_t org(nabu::op_or);
             // gate_handle_t pp(org);
             
