@@ -7,6 +7,61 @@
 
 namespace nbi
 {
+    struct gate_shapes_t
+    {
+        sf::CircleShape in0, in1, out;
+        sf::ConvexShape body;
+        
+        gate_shapes_t(){}
+        gate_shapes_t(const nabu::operation& op, const sf::Vector2f& pos)
+        {
+            float r = 0.5;
+            in0 = sf::CircleShape(r);
+            in1 = sf::CircleShape(r);
+            out = sf::CircleShape(r);
+            auto set_style = [&](sf::CircleShape& s) -> void
+            {
+                s = sf::CircleShape(r);
+                s.setOutlineThickness(0.05*r);
+                s.setFillColor(sf::Color::Red);
+                s.setOutlineColor(sf::Color::Black);
+            };
+            set_style(in0);
+            set_style(in1);
+            set_style(out);
+            
+            switch(op)
+            {
+                case nabu::op_id:
+                {
+                    in0.setPosition(pos.x - r - 1.8, pos.y - r);
+                    out.setPosition(pos.x - r + 1.8, pos.y - r);
+                    break;
+                }
+                case nabu::op_inv:
+                {
+                    in0.setPosition(pos.x - r - 1.8, pos.y - r);
+                    out.setPosition(pos.x - r + 1.8, pos.y - r);
+                    break;
+                }
+                case nabu::op_or:
+                {
+                    in0.setPosition(pos.x - r - 1.8, pos.y - r - 1.0);
+                    in1.setPosition(pos.x - r - 1.8, pos.y - r + 1.0);
+                    out.setPosition(pos.x - r + 1.8, pos.y - r);
+                    break;
+                }
+                case nabu::op_and:
+                {
+                    in0.setPosition(pos.x - r - 1.8, pos.y - r - 1.0);
+                    in1.setPosition(pos.x - r - 1.8, pos.y - r + 1.0);
+                    out.setPosition(pos.x - r + 1.8, pos.y - r);
+                    break;
+                }
+            }
+        }
+    };
+    
     struct gate_placer_t
     {
         bool is_in_place_mode;
@@ -14,6 +69,7 @@ namespace nbi
         std::array<nabu::operation, 4> ops;
         bool has_last_placed_position;
         sf::Vector2f last_placed;
+        gate_shapes_t placing_shapes;
         gate_placer_t()
         {
             is_in_place_mode = false;
@@ -66,16 +122,11 @@ namespace nbi
         {
             if (is_in_place_mode)
             {
-                float r = 0.5;
-                sf::CircleShape shp(r);
-                shp.setOutlineThickness(0.05*r);
-                shp.setPosition(mouse_pos.x - r, mouse_pos.y - r);
-                if (ops[index] == nabu::op_id)  shp.setFillColor(sf::Color::Red);
-                if (ops[index] == nabu::op_inv) shp.setFillColor(sf::Color::Green);
-                if (ops[index] == nabu::op_or)  shp.setFillColor(sf::Color::Blue);
-                if (ops[index] == nabu::op_and) shp.setFillColor(sf::Color::Yellow);
-                shp.setOutlineColor(sf::Color::Black);
-                win.draw(shp, trans);
+                nabu::operation op = ops[index];
+                placing_shapes = gate_shapes_t(op, mouse_pos);
+                win.draw(placing_shapes.in0, trans);
+                if ((op == nabu::op_or) || (op == nabu::op_and)) win.draw(placing_shapes.in1, trans);
+                win.draw(placing_shapes.out, trans);
             }
         }
     };
