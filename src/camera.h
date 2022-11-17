@@ -22,7 +22,7 @@ namespace nbi
         camera_t(const int& wid, const int& hei)
         {
             zoom_sensitivity = 1.5;
-            zoom_factor = 0.0;
+            zoom_factor = -20.0;
             zoom_center = sf::Vector2f(0,0);
             center = sf::Vector2f(0,0);
             cam_trans = sf::Transform::Identity;

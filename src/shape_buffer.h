@@ -18,6 +18,14 @@ namespace nbi
             return output;
         }
         
+        template <typename shape_t> shape_t* copy_to_buffer(const shape_t& in)
+        {
+            auto output = new shape_t;
+            shapes.push_back(output);
+            *output = in;
+            return output;
+        }
+        
         ~shape_buffer_t()
         {
             for (auto s: shapes) delete s;

@@ -16,3 +16,6 @@ setup:
 
 clean:
 	rm -rf ${bin_dir}
+
+run: main
+	${bin_dir}/${front_end}
