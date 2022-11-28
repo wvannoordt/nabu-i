@@ -11,7 +11,7 @@ main: setup
 setup:
 	mkdir -p ${bin_dir}
 	rm -f ${bin_dir}/${front_end}
-	echo "${bin_dir}/${launcher} ${mkfile_dir}" >> ${bin_dir}/${front_end}
+	echo "${bin_dir}/${launcher} ${mkfile_dir} \$$1" >> ${bin_dir}/${front_end}
 	chmod +x ${bin_dir}/${front_end}
 
 clean:
