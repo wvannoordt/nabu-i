@@ -1,6 +1,6 @@
-back_color      {R = 105; G = 105; B = 105;}
+back_color      {R = 065; G = 065; B = 065;}
 off_state_color {R = 111; G = 111; B = 111;}
-on_state_color  {R = 120; G = 120; B = 200;}
-bad_state_color {R = 200; G = 120; B = 120;}
+on_state_color  {R = 030; G = 030; B = 200;}
+bad_state_color {R = 200; G = 030; B = 030;}
 border_color    {R = 000; G = 000; B = 000;}
 gate_color      {R = 111; G = 111; B = 111;}

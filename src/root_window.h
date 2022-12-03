@@ -51,6 +51,12 @@ namespace nbi
                 key::tab,
                 std::bind(&gate_place_mode_t::next_op, &gate_place_mode));
             key_event_dispatch.add_call(
+                key::shift + key::tab,
+                std::bind(&gate_place_mode_t::prev_op, &gate_place_mode));
+            key_event_dispatch.add_call(
+                key::esc,
+                std::bind(&gate_place_mode_t::disable, &gate_place_mode));
+            key_event_dispatch.add_call(
                 key::ctrl + key::shift + key::d,
                 std::bind(&root_window_t::debug_func, this));
             key_event_dispatch.add_call(
@@ -94,8 +100,13 @@ namespace nbi
                 mouse_lclick,
                 std::bind(&gate_place_mode_t::on_lclick, &gate_place_mode, std::placeholders::_1, std::placeholders::_2)
             );
+            mouse_event_dispatch.add_call(
+                mouse_move,
+                std::bind(&gate_place_mode_t::on_mouse_move, &gate_place_mode, std::placeholders::_1, std::placeholders::_2)
+            );
             
             canvas = canvas_t(&assets);
+            gate_place_mode = gate_place_mode_t(&assets);
             reset_view();
         }
         
@@ -121,16 +132,14 @@ namespace nbi
         
         void debug_func()
         {
-            float r = 0.5;
-            auto in0 = sf::CircleShape(r);
-            in0.setPosition(sf::Vector2f(0-r, 0-r));
-            canvas.gate_layer.copy_to_buffer(in0);
+            
         }
         
         void render()
         {
             window->clear(assets.colors.back_color);
             canvas.draw(*window, view.get_transform());
+            gate_place_mode.draw(*window, view.get_transform());
             window->display();
         }
         

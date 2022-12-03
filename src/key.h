@@ -112,6 +112,7 @@ namespace nbi
         static key_t esc('E');
         static key_t tab('T');
         static key_t del('D');
+        static key_t nil('!');
         
     }
     
@@ -120,6 +121,7 @@ namespace nbi
         using namespace key;
         if (event.type == sf::Event::KeyPressed)
         {
+            key_out = nil;
             return false;
         }
         key_t output;
