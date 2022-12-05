@@ -4,19 +4,26 @@
 
 namespace nbi
 {
+    enum key_action
+    {
+        key_press,
+        key_release
+    };
+    
     struct key_t
     {
-        bool ctrl;
-        bool shift;
-        bool alt;
-        char principal;
+        bool ctrl = false;
+        bool shift = false;
+        bool alt = false;
+        char principal = '@';
+        key_action action = key_press;
         key_t(){}
         key_t(bool ctrl_in, bool shift_in, bool alt_in)
         {
             ctrl  = ctrl_in;
             shift = shift_in;
             alt   = alt_in;
-            principal = 0;
+            principal = '@';
         }
         key_t(char principal_in)
         {
@@ -32,6 +39,18 @@ namespace nbi
             output.shift = rhs.shift || shift;
             output.alt   = rhs.alt   || alt;
             output.principal = rhs.principal;
+            output.action = key_press;
+            return output;
+        }
+        
+        bool operator==(const key_t& rhs)
+        {
+            bool output = true;
+            output = output && (ctrl      == rhs.ctrl);
+            output = output && (shift     == rhs.shift);
+            output = output && (alt       == rhs.alt);
+            output = output && (principal == rhs.principal);
+            output = output && (action    == rhs.action);
             return output;
         }
         
@@ -42,12 +61,14 @@ namespace nbi
             output += 1000*ctrl;
             output += 10000*shift;
             output += 100000*alt;
+            output += 1000000*(int)action;
             return output;
         }
         
         std::string get_string() const
         {
             std::string output = "";
+            if (action == key_release) output += "!";
             if (ctrl)                  output += "ctrl";
             if (ctrl && principal!=0)  output += "+";
             if (shift)                 output += "shift";
@@ -112,14 +133,28 @@ namespace nbi
         static key_t esc('E');
         static key_t tab('T');
         static key_t del('D');
-        static key_t nil('!');
+        static key_t nil('@');
         
+        key_t press(const key_t& key_in)
+        {
+            key_t output  = key_in;
+            output.action = key_press;
+            return output;
+        }
+        
+        key_t release(const key_t& key_in)
+        {
+            key_t output  = key_in;
+            output.action = key_release;
+            return output;
+        }
     }
     
     static bool is_key_event(const sf::Event& event, key_t& key_out)
     {
+        //this is a mess... oh well
         using namespace key;
-        if (event.type == sf::Event::KeyPressed)
+        if (event.type != sf::Event::KeyPressed && event.type != sf::Event::KeyReleased)
         {
             key_out = nil;
             return false;
@@ -170,6 +205,14 @@ namespace nbi
         if (event.key.control) output.ctrl  = true;
         if (event.key.alt)     output.alt   = true;
         if (event.key.shift)   output.shift = true;
+        if ((event.key.code == sf::Keyboard::LControl) || (event.key.code == sf::Keyboard::RControl)) output.ctrl  = true;
+        if ((event.key.code == sf::Keyboard::LShift)   || (event.key.code == sf::Keyboard::RShift))   output.shift = true;
+        if ((event.key.code == sf::Keyboard::LAlt)     || (event.key.code == sf::Keyboard::RAlt))     output.alt   = true;
+        if (event.type == sf::Event::KeyReleased)
+        {
+            output = release(output);
+        }
+        if (event.type == sf::Event::KeyPressed)  output = press(output);
         key_out = output;
         return true;
     }

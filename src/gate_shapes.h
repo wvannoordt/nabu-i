@@ -36,7 +36,7 @@ namespace nbi
             sf::Color outl_color = assets->colors.border_color;
             auto set_style = [&](sf::Shape& s) -> void
             {
-                s.setOutlineThickness(0.2*r);
+                s.setOutlineThickness(0.09);
                 s.setFillColor(body_color);
                 s.setOutlineColor(outl_color);
             };

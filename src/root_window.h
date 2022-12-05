@@ -23,19 +23,17 @@ namespace nbi
         event_dispatch_t<key_t,   void()> key_event_dispatch;
         event_dispatch_t<mouse_t, void(const sf::Vector2f&, canvas_t&)> mouse_event_dispatch;
         mouse_state_t mouse_state;
-        canvas_t canvas;
         view_t view;
         
         control_mode current_mode = control_select;
         gate_place_mode_t gate_place_mode;
         select_mode_t select_mode; //on by default
         
-        // gate_placer_t gate_placer;
-        
         //This holds all of the logical state of the instance
         //dealing with the shape buffer and the logical
         //topology of the nabu machine
-        // interactive_instance_t instance;
+        //interactive_instance_t instance;
+        canvas_t canvas;
         
         root_window_t(const assets_t& assets_in)
         {
@@ -52,6 +50,9 @@ namespace nbi
                 key::a,
                 std::bind(&root_window_t::toggle_control_mode, this, control_gate_place));
             key_event_dispatch.add_call(
+                key::a,
+                std::bind(&select_mode_t::clear_selections, &select_mode));
+            key_event_dispatch.add_call(
                 key::tab,
                 std::bind(&gate_place_mode_t::next_op, &gate_place_mode));
             key_event_dispatch.add_call(
@@ -61,11 +62,26 @@ namespace nbi
                 key::esc,
                 std::bind(&root_window_t::toggle_control_mode, this, control_select));
             key_event_dispatch.add_call(
+                key::esc,
+                std::bind(&select_mode_t::clear_selections, &select_mode));
+            key_event_dispatch.add_call(
                 key::ctrl + key::shift + key::d,
                 std::bind(&root_window_t::debug_func, this));
             key_event_dispatch.add_call(
                 key::ctrl + key::r,
                 std::bind(&root_window_t::reset_view, this));
+            key_event_dispatch.add_call(
+                key::del,
+                std::bind(&canvas_t::delete_gates, &canvas, &select_mode.selected_shapes));
+            key_event_dispatch.add_call(
+                key::e,
+                std::bind(&canvas_t::create_edge_from_node_selection, &canvas, &select_mode.selected_nodes));
+            key_event_dispatch.add_call(
+                key::ctrl,
+                std::bind(&select_mode_t::set_multi_select, &select_mode, true));
+            key_event_dispatch.add_call(
+                key::release(key::ctrl),
+                std::bind(&select_mode_t::set_multi_select, &select_mode, false));
             
             //mouse events
             mouse_event_dispatch.add_call(
@@ -107,6 +123,10 @@ namespace nbi
             mouse_event_dispatch.add_call(
                 mouse_lclick,
                 std::bind(&select_mode_t::on_lclick, &select_mode, std::placeholders::_1, std::placeholders::_2)
+            );
+            mouse_event_dispatch.add_call(
+                mouse_lrelease,
+                std::bind(&select_mode_t::on_lrelease, &select_mode, std::placeholders::_1, std::placeholders::_2)
             );
             mouse_event_dispatch.add_call(
                 mouse_rclick,
@@ -176,6 +196,7 @@ namespace nbi
         void render()
         {
             window->clear(assets.colors.back_color);
+            select_mode.draw(*window, view.get_transform());
             canvas.draw(*window, view.get_transform());
             gate_place_mode.draw(*window, view.get_transform());
             window->display();

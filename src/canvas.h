@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "shape_buffer.h"
 #include "view.h"
 #include "nabu.h"
@@ -66,6 +68,42 @@ namespace nbi
             gate_to_shape.insert({new_gate, new_shapes});
             last_added_gate = new_gate;
             return new_gate;
+        }
+        
+        void delete_gates(std::set<gate_shapes_t*>* handles)
+        {
+            print("TODO: delete", handles->size(), "gates!!");
+            
+        }
+        
+        void create_edge_from_node_selection(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles)
+        {
+            nabu::onode_t* control_node = nullptr;
+            std::vector<nabu::inode_t*> inodes;
+            auto is_inode = [&](const std::pair<gate_shapes_t*, sf::Shape*>& p) -> bool
+            {
+                return p.second != &(p.first->out);
+            };
+            for (auto p: *handles)
+            {
+                nabu::gate_t& gate = *shape_to_gate.at(p.first);
+                if (is_inode(p))
+                {
+                    int i = 0;
+                    if (p.second == &(p.first->in1)) i = 1;
+                    inodes.push_back(&gate.in(i));
+                }
+                else
+                {
+                    control_node = &gate.out();
+                }
+            }
+            if (control_node != nullptr && (inodes.size()>0))
+            {
+                auto new_edge = machine.add_edge();
+                new_edge->attach(*control_node);
+                for (auto p: inodes) new_edge->attach(*p);
+            }
         }
         
         //todo: optimize this using bounding boxes!

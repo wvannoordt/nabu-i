@@ -3,6 +3,6 @@ off_state_color {R = 111; G = 111; B = 111;}
 on_state_color  {R = 070; G = 070; B = 255;}
 bad_state_color {R = 200; G = 070; B = 070;}
 border_color    {R = 000; G = 000; B = 000;}
-select_color    {R = 255; G = 150; B = 000;}
-preselect_color {R = 180; G = 110; B = 000;}
+select_color    {R = 150; G = 215; B = 000;}
+preselect_color {R = 070; G = 110; B = 025;}
 gate_color      {R = 180; G = 180; B = 180;}
