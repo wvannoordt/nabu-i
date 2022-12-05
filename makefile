@@ -5,8 +5,18 @@ mkfile_dir := $(dir $(mkfile_path))
 bin_dir := ${mkfile_dir}/bin
 front_end := nbi
 launcher := nbilaunch.x
+
+
+flags := 
+flags += -g
+flags += -std=c++20
+
+sanny := 0
+ifeq (${sanny},1)
+flags += -fsanitize=undefined,address -fstack-protector-all
+endif
 main: setup
-	g++ -std=c++20 -I./src -I${PTL}/include -I${NABU}/src main.cc -o ${bin_dir}/${launcher} -lsfml-graphics -lsfml-window -lsfml-system -L ${PTL}/lib -lPTL
+	g++ ${flags} -g -I./src -I${PTL}/include -I${NABU}/src main.cc -o ${bin_dir}/${launcher} -lsfml-graphics -lsfml-window -lsfml-system -L ${PTL}/lib -lPTL
 
 setup:
 	mkdir -p ${bin_dir}

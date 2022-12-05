@@ -12,25 +12,73 @@ namespace nbi
     {
         assets_t* assets;
         shape_buffer_t edge_layer;
-        shape_buffer_t gate_layer;
+        std::vector<gate_shapes_t*> gate_shapes;
         nabu::machine_t machine;
+        gate_shapes_t* last_added_shapes = nullptr;
+        nabu::gate_t* last_added_gate = nullptr;
+        std::map<gate_shapes_t*, nabu::gate_t*> shape_to_gate;
+        std::map<nabu::gate_t*, gate_shapes_t*> gate_to_shape;
         canvas_t(){}
         canvas_t(assets_t* assets_in)
         {
             assets = assets_in;
         }
         
-        void draw(sf::RenderWindow& window, const sf::Transform& trans)
+        void update_colors()
         {
-            edge_layer.draw(window, trans);
-            gate_layer.draw(window, trans);
+            auto updcl = [&](const auto& node, sf::Shape& shp) -> void
+            {
+                switch (node.node_state)
+                {
+                    case nabu::off_state: {shp.setFillColor(assets->colors.off_state_color); return;}
+                    case nabu::bad_state: {shp.setFillColor(assets->colors.bad_state_color); return;}
+                    case nabu::on_state:  {shp.setFillColor(assets->colors.on_state_color);  return;}
+                }
+            };
+            for (auto& p: machine.get_gates())
+            {
+                auto shapes = gate_to_shape.at(p);
+                updcl(p->in(0), gate_to_shape.at(p)->in0);
+                updcl(p->in(1), gate_to_shape.at(p)->in1);
+                updcl(p->out(), gate_to_shape.at(p)->out);
+            }
         }
         
-        void add_gate(const nabu::operation& oper, const sf::Vector2f& position)
+        void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
-            gate_shapes_t shapes(oper, position, assets);
-            shapes.add_to_buffer(gate_layer);
+            update_colors();
+            edge_layer.draw(window, trans);
+            for (auto& p: gate_shapes)
+            {
+                p->draw(window, trans);
+            }
+        }
+        
+        nabu::gate_t* add_gate(const nabu::operation& oper, const sf::Vector2f& position)
+        {
+            gate_shapes_t* shapes = new gate_shapes_t(oper, position, assets);
+            gate_shapes.push_back(shapes);
             auto new_gate = machine.add_gate(oper);
+            
+            //need to keep track of the correspondence between gates and the shapes that they 
+            gate_shapes_t* new_shapes = shapes;
+            shape_to_gate.insert({new_shapes, new_gate});
+            gate_to_shape.insert({new_gate, new_shapes});
+            last_added_gate = new_gate;
+            return new_gate;
+        }
+        
+        void debug()
+        {
+            if (last_added_gate != nullptr)
+            {
+                last_added_gate->set_input_state(0, nabu::on_state);
+            }
+        }
+        
+        ~canvas_t()
+        {
+            for (auto p: gate_shapes) delete p;
         }
     };
 }

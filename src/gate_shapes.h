@@ -11,10 +11,10 @@ namespace nbi
         sf::ConvexShape body;
         sf::ConvexShape r0, r1, ro;
         nabu::operation op;
-        assets_t* assets;
         float r      = 0.45;
         float r_aux  = 0.25;
         float r_rect = 0.05;
+        sf::Vector2f position;
         
         sf::Vector2f get_center(const sf::CircleShape& sirc)
         {
@@ -22,9 +22,8 @@ namespace nbi
         }
         
         gate_shapes_t(){}
-        gate_shapes_t(const nabu::operation& op_in, const sf::Vector2f& pos, assets_t* assets_in)
+        gate_shapes_t(const nabu::operation& op_in, const sf::Vector2f& pos, assets_t* assets)
         {
-            assets = assets_in;
             op = op_in;
             aux = sf::CircleShape(r_aux);
             in0 = sf::CircleShape(r);
@@ -36,7 +35,7 @@ namespace nbi
             sf::Color outl_color = assets->colors.border_color;
             auto set_style = [&](sf::Shape& s) -> void
             {
-                s.setOutlineThickness(0.1*r);
+                s.setOutlineThickness(0.2*r);
                 s.setFillColor(body_color);
                 s.setOutlineColor(outl_color);
             };
@@ -61,6 +60,7 @@ namespace nbi
         
         void set_position(const sf::Vector2f& pos)
         {
+            position = pos;
             auto create_connection = [&](sf::ConvexShape& rect, const sf::Vector2f& p1, const sf::Vector2f& p2) -> void
             {
                 sf::Vector2f dx(p2.y-p1.y, p1.x-p2.x);
@@ -152,6 +152,11 @@ namespace nbi
             }
         }
         
+        sf::Vector2f get_position() const
+        {
+            return position;
+        }
+        
         void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
             window.draw(r0, trans);
@@ -164,16 +169,22 @@ namespace nbi
             window.draw(out, trans);
         }
         
-        void add_to_buffer(shape_buffer_t& buffer)
+        void add_to_buffer(shape_buffer_t& buffer, std::vector<sf::Shape*>& added_shapes)
         {
-            buffer.copy_to_buffer(r0);
-            buffer.copy_to_buffer(ro);
-            if ((op == nabu::op_or) || (op == nabu::op_and)) buffer.copy_to_buffer(r1);
-            buffer.copy_to_buffer(in0);
-            if ((op == nabu::op_or) || (op == nabu::op_and)) buffer.copy_to_buffer(in1);
-            buffer.copy_to_buffer(body);
-            if (op==nabu::op_inv) buffer.copy_to_buffer(aux);
-            buffer.copy_to_buffer(out);
+            added_shapes.clear();
+            auto add_shape = [&](auto& shp) -> void
+            {
+                auto ptr = buffer.copy_to_buffer(shp);
+                added_shapes.push_back(ptr);
+            };
+            add_shape(r0);
+            add_shape(ro);
+            if ((op == nabu::op_or) || (op == nabu::op_and)) add_shape(r1);
+            add_shape(in0);
+            if ((op == nabu::op_or) || (op == nabu::op_and)) add_shape(in1);
+            add_shape(body);
+            if (op==nabu::op_inv) add_shape(aux);
+            add_shape(out);
         }
     };
 }

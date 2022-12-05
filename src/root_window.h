@@ -3,16 +3,18 @@
 #include <functional>
 #include <SFML/Graphics.hpp>
 
+#include "control_modes.h"
 #include "assets.h"
 #include "view.h"
 #include "event_dispatch.h"
 #include "gate_place_mode.h"
+#include "select_mode.h"
 #include "canvas.h"
 #include "key.h"
 #include "mouse.h"
 
 namespace nbi
-{
+{    
     struct root_window_t
     {
         assets_t assets;
@@ -24,7 +26,9 @@ namespace nbi
         canvas_t canvas;
         view_t view;
         
+        control_mode current_mode = control_select;
         gate_place_mode_t gate_place_mode;
+        select_mode_t select_mode; //on by default
         
         // gate_placer_t gate_placer;
         
@@ -46,7 +50,7 @@ namespace nbi
                 std::bind(&root_window_t::on_close, this));
             key_event_dispatch.add_call(
                 key::a,
-                std::bind(&root_window_t::toggle_gate_place_mode, this));
+                std::bind(&root_window_t::toggle_control_mode, this, control_gate_place));
             key_event_dispatch.add_call(
                 key::tab,
                 std::bind(&gate_place_mode_t::next_op, &gate_place_mode));
@@ -55,7 +59,7 @@ namespace nbi
                 std::bind(&gate_place_mode_t::prev_op, &gate_place_mode));
             key_event_dispatch.add_call(
                 key::esc,
-                std::bind(&gate_place_mode_t::disable, &gate_place_mode));
+                std::bind(&root_window_t::toggle_control_mode, this, control_select));
             key_event_dispatch.add_call(
                 key::ctrl + key::shift + key::d,
                 std::bind(&root_window_t::debug_func, this));
@@ -101,18 +105,47 @@ namespace nbi
                 std::bind(&gate_place_mode_t::on_lclick, &gate_place_mode, std::placeholders::_1, std::placeholders::_2)
             );
             mouse_event_dispatch.add_call(
+                mouse_lclick,
+                std::bind(&select_mode_t::on_lclick, &select_mode, std::placeholders::_1, std::placeholders::_2)
+            );
+            mouse_event_dispatch.add_call(
                 mouse_move,
                 std::bind(&gate_place_mode_t::on_mouse_move, &gate_place_mode, std::placeholders::_1, std::placeholders::_2)
+            );
+            mouse_event_dispatch.add_call(
+                mouse_move,
+                std::bind(&select_mode_t::on_mouse_move, &select_mode, std::placeholders::_1, std::placeholders::_2)
             );
             
             canvas = canvas_t(&assets);
             gate_place_mode = gate_place_mode_t(&assets);
             reset_view();
+            set_control_mode(control_select);
         }
         
-        void toggle_gate_place_mode()
+        template <typename func_t> void foreach_mode_obj(const func_t& func)
         {
-            gate_place_mode.toggle();
+            func(gate_place_mode);
+            func(select_mode);
+        }
+        
+        void set_control_mode(const control_mode& mode)
+        {
+            foreach_mode_obj([&](auto& mode_obj) -> void
+            {
+                mode_obj.disable();
+                if (mode_obj.mode_type() == mode)
+                {
+                    mode_obj.enable();
+                }
+            });
+            current_mode = mode;
+        }
+        
+        void toggle_control_mode(const control_mode& mode)
+        {
+            if (mode == current_mode) set_control_mode(control_select);
+            else set_control_mode(mode);
         }
         
         void reset_view()
@@ -132,7 +165,7 @@ namespace nbi
         
         void debug_func()
         {
-            
+            canvas.debug();
         }
         
         void render()
@@ -146,7 +179,7 @@ namespace nbi
         void run()
         {
             
-            //we don't exit this loop until this window is closed, so need a thread.
+            //we don't exit this loop until this window is closed, so need a thread?
             while (window->isOpen())
             {
                 sf::Event event;

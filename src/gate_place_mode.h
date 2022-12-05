@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "control_modes.h"
 #include "canvas.h"
 #include "nabu.h"
 #include "gate_shapes.h"
@@ -22,6 +23,8 @@ namespace nbi
         assets_t* assets;
         gate_shapes_t preview;
         sf::Vector2f last_pos;
+        
+        static constexpr control_mode mode_type() {return control_gate_place;}
         
         gate_place_mode_t(){}
         gate_place_mode_t(assets_t* assets_in)
@@ -75,15 +78,16 @@ namespace nbi
                 preview.draw(window, trans);
             }
         }
-        
-        void toggle()
+
+        void enable()
         {
+            enabled = true;
             preview = gate_shapes_t(ops[index], last_pos, assets);
-            enabled = !enabled;
         }
         
         void disable()
         {
+            preview = gate_shapes_t(ops[index], last_pos, assets);
             enabled = false;
         }
     };
