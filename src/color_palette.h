@@ -13,6 +13,8 @@ namespace nbi
         sf::Color on_state_color;
         sf::Color bad_state_color;
         sf::Color border_color;
+        sf::Color select_color;
+        sf::Color preselect_color;
         sf::Color gate_color;
         color_palette_t(){}
         sf::Color read_color(PTL::PropertySection& section)
@@ -37,7 +39,10 @@ namespace nbi
             on_state_color  = read_color(section["on_state_color"]);
             bad_state_color = read_color(section["bad_state_color"]);
             border_color    = read_color(section["border_color"]);
+            select_color    = read_color(section["select_color"]);
+            preselect_color = read_color(section["preselect_color"]);
             gate_color      = read_color(section["gate_color"]);
+            
         }
     };
 }

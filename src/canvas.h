@@ -68,12 +68,19 @@ namespace nbi
             return new_gate;
         }
         
-        void debug()
+        //todo: optimize this using bounding boxes!
+        bool get_shape_at_cursor(const sf::Vector2f& pos, gate_shapes_t*& shapes_out, sf::Shape*& which_shape)
         {
-            if (last_added_gate != nullptr)
+            for (auto p: gate_shapes)
             {
-                last_added_gate->set_input_state(0, nabu::on_state);
+                if (p->check_collide(pos, which_shape))
+                {
+                    shapes_out = p;
+                    return true;
+                }
             }
+            shapes_out = nullptr;
+            return false;
         }
         
         ~canvas_t()

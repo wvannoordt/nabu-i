@@ -109,6 +109,10 @@ namespace nbi
                 std::bind(&select_mode_t::on_lclick, &select_mode, std::placeholders::_1, std::placeholders::_2)
             );
             mouse_event_dispatch.add_call(
+                mouse_rclick,
+                std::bind(&select_mode_t::on_rclick, &select_mode, std::placeholders::_1, std::placeholders::_2)
+            );
+            mouse_event_dispatch.add_call(
                 mouse_move,
                 std::bind(&gate_place_mode_t::on_mouse_move, &gate_place_mode, std::placeholders::_1, std::placeholders::_2)
             );
@@ -119,6 +123,7 @@ namespace nbi
             
             canvas = canvas_t(&assets);
             gate_place_mode = gate_place_mode_t(&assets);
+            select_mode     = select_mode_t(&assets);
             reset_view();
             set_control_mode(control_select);
         }
@@ -165,7 +170,7 @@ namespace nbi
         
         void debug_func()
         {
-            canvas.debug();
+            
         }
         
         void render()

@@ -11,7 +11,8 @@ namespace nbi
         sf::ConvexShape body;
         sf::ConvexShape r0, r1, ro;
         nabu::operation op;
-        float r      = 0.45;
+        float r        = 0.45;
+        float r_select = 1.3;
         float r_aux  = 0.25;
         float r_rect = 0.05;
         sf::Vector2f position;
@@ -56,6 +57,27 @@ namespace nbi
             set_rstyle(r1);
             set_rstyle(ro);
             set_position(pos);
+        }
+        
+        void select(assets_t* assets, sf::Shape* shape)
+        {
+            shape->setOutlineColor(assets->colors.select_color);
+            if (shape == &body) aux.setOutlineColor(assets->colors.select_color);
+        }
+        
+        void preselect(assets_t* assets, sf::Shape* shape)
+        {
+            shape->setOutlineColor(assets->colors.preselect_color);
+            if (shape == &body) aux.setOutlineColor(assets->colors.preselect_color);
+        }
+        
+        void deselect(assets_t* assets)
+        {
+            in0.setOutlineColor(assets->colors.border_color);
+            in1.setOutlineColor(assets->colors.border_color);
+            out.setOutlineColor(assets->colors.border_color);
+            aux.setOutlineColor(assets->colors.border_color);
+            body.setOutlineColor(assets->colors.border_color);
         }
         
         void set_position(const sf::Vector2f& pos)
@@ -167,6 +189,38 @@ namespace nbi
             window.draw(body, trans);
             if (op==nabu::op_inv) window.draw(aux, trans);
             window.draw(out, trans);
+        }
+        
+        bool check_collide(const sf::Vector2f& pos, sf::Shape*& which_shape)
+        {
+            auto condi = [&](const sf::Vector2f& a, const sf::Vector2f& b, const float r_s) -> bool
+            {
+                sf::Vector2f dx = b - a;
+                return (dx.x*dx.x + dx.y*dx.y) < (r_s*r_s);
+            };
+            sf::Vector2f dx_body = pos - position;
+            if (condi(pos, position, r_select))
+            {
+                which_shape = &body;
+                return true;
+            }
+            if (condi(pos, get_center(in0), r))
+            {
+                which_shape = &in0;
+                return true;
+            }
+            if (condi(pos, get_center(out), r))
+            {
+                which_shape = &out;
+                return true;
+            }
+            if ((op == nabu::op_and || op == nabu::op_or)  && condi(pos, get_center(in1), r))
+            {
+                which_shape = &in1;
+                return true;
+            }
+            which_shape = nullptr;
+            return false;
         }
         
         void add_to_buffer(shape_buffer_t& buffer, std::vector<sf::Shape*>& added_shapes)
