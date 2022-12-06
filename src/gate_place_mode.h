@@ -23,6 +23,8 @@ namespace nbi
         assets_t* assets;
         gate_shapes_t preview;
         sf::Vector2f last_pos;
+        int angle = 0;
+        int angle_max = 8;
         
         static constexpr control_mode mode_type() {return control_gate_place;}
         
@@ -40,6 +42,7 @@ namespace nbi
                 index++;
                 index = index % ops.size();
                 preview = gate_shapes_t(ops[index], last_pos, assets);
+                preview.set_rotation(360.0*angle/(float)angle_max);
             }
         }
         
@@ -51,6 +54,7 @@ namespace nbi
                 index += ops.size();
                 index = index % ops.size();
                 preview = gate_shapes_t(ops[index], last_pos, assets);
+                preview.set_rotation(360.0*angle/(float)angle_max);
             }
         }
         
@@ -58,7 +62,7 @@ namespace nbi
         {
             if (enabled)
             {
-                data.add_gate(ops[index], last_pos);
+                data.add_gate(ops[index], last_pos, 360.0*angle/(float)angle_max);
             }
         }
         
@@ -68,6 +72,19 @@ namespace nbi
             if (enabled)
             {
                 preview.set_position(pos);
+            }
+        }
+        
+        void rotate_preview(const int& right_left)
+        {
+            //right_left:  1 => right
+            //right_left: -1 => left
+            if (enabled)
+            {
+                angle += right_left + angle_max;
+                angle %= angle_max;
+                float theta = 360.0*angle/(float)angle_max;
+                preview.set_rotation(theta);
             }
         }
         

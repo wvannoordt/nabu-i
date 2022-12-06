@@ -50,6 +50,12 @@ namespace nbi
                 key::a,
                 std::bind(&root_window_t::toggle_control_mode, this, control_gate_place));
             key_event_dispatch.add_call(
+                key::r,
+                std::bind(&gate_place_mode_t::rotate_preview, &gate_place_mode, 1));
+            key_event_dispatch.add_call(
+                key::shift + key::r,
+                std::bind(&gate_place_mode_t::rotate_preview, &gate_place_mode, -1));
+            key_event_dispatch.add_call(
                 key::a,
                 std::bind(&select_mode_t::clear_selections, &select_mode));
             key_event_dispatch.add_call(

@@ -61,7 +61,7 @@ namespace nbi
             float znew = px_per_unit();
             float theta = zprev/znew;
             sf::Vector2f new_center;
-            //I can't quite account for the neative sign here...
+            //I can't quite account for the negative sign here...
             new_center.x = theta*center.x - (1.0 - theta)*zoom_center.x;
             new_center.y = theta*center.y - (1.0 - theta)*zoom_center.y;
             center = new_center;

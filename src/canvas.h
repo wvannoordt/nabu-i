@@ -6,6 +6,7 @@
 #include "view.h"
 #include "nabu.h"
 #include "gate_shapes.h"
+#include "edge_shapes.h"
 
 namespace nbi
 {
@@ -13,13 +14,15 @@ namespace nbi
     struct canvas_t
     {
         assets_t* assets;
-        shape_buffer_t edge_layer;
         std::vector<gate_shapes_t*> gate_shapes;
+        std::vector<edge_shapes_t*> edge_shapes;
         nabu::machine_t machine;
         gate_shapes_t* last_added_shapes = nullptr;
         nabu::gate_t* last_added_gate = nullptr;
         std::map<gate_shapes_t*, nabu::gate_t*> shape_to_gate;
         std::map<nabu::gate_t*, gate_shapes_t*> gate_to_shape;
+        std::map<edge_shapes_t*, nabu::edge_t*> shape_to_edge;
+        std::map<nabu::edge_t*, edge_shapes_t*> edge_to_shape;
         canvas_t(){}
         canvas_t(assets_t* assets_in)
         {
@@ -28,35 +31,46 @@ namespace nbi
         
         void update_colors()
         {
-            auto updcl = [&](const auto& node, sf::Shape& shp) -> void
+            auto updcl = [&](const nabu::state& state_in, sf::Shape& shp) -> void
             {
-                switch (node.node_state)
+                switch (state_in)
                 {
                     case nabu::off_state: {shp.setFillColor(assets->colors.off_state_color); return;}
                     case nabu::bad_state: {shp.setFillColor(assets->colors.bad_state_color); return;}
                     case nabu::on_state:  {shp.setFillColor(assets->colors.on_state_color);  return;}
                 }
             };
+            for (auto p: machine.get_edges())
+            {
+                auto e_shapes = edge_to_shape.at(p);
+                for (auto& p2: e_shapes->shapes)
+                {
+                    updcl(p->get_state(), p2);
+                }
+            }
             for (auto& p: machine.get_gates())
             {
                 auto shapes = gate_to_shape.at(p);
-                updcl(p->in(0), gate_to_shape.at(p)->in0);
-                updcl(p->in(1), gate_to_shape.at(p)->in1);
-                updcl(p->out(), gate_to_shape.at(p)->out);
+                updcl(p->in(0).node_state, shapes->in0);
+                updcl(p->in(1).node_state, shapes->in1);
+                updcl(p->out().node_state, shapes->out);
             }
         }
         
         void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
             update_colors();
-            edge_layer.draw(window, trans);
+            for (auto& p: edge_shapes)
+            {
+                p->draw(window, trans);
+            }
             for (auto& p: gate_shapes)
             {
                 p->draw(window, trans);
             }
         }
         
-        nabu::gate_t* add_gate(const nabu::operation& oper, const sf::Vector2f& position)
+        nabu::gate_t* add_gate(const nabu::operation& oper, const sf::Vector2f& position, const float& angle)
         {
             gate_shapes_t* shapes = new gate_shapes_t(oper, position, assets);
             gate_shapes.push_back(shapes);
@@ -67,6 +81,7 @@ namespace nbi
             shape_to_gate.insert({new_shapes, new_gate});
             gate_to_shape.insert({new_gate, new_shapes});
             last_added_gate = new_gate;
+            new_shapes->set_rotation(angle);
             return new_gate;
         }
         
@@ -80,6 +95,8 @@ namespace nbi
         {
             nabu::onode_t* control_node = nullptr;
             std::vector<nabu::inode_t*> inodes;
+            sf::Vector2f control_point;
+            std::vector<sf::Vector2f> i_pts;
             auto is_inode = [&](const std::pair<gate_shapes_t*, sf::Shape*>& p) -> bool
             {
                 return p.second != &(p.first->out);
@@ -89,13 +106,21 @@ namespace nbi
                 nabu::gate_t& gate = *shape_to_gate.at(p.first);
                 if (is_inode(p))
                 {
+                    sf::Vector2f ipt;
                     int i = 0;
-                    if (p.second == &(p.first->in1)) i = 1;
+                    ipt = p.first->get_center_r(p.first->in0);
+                    if (p.second == &(p.first->in1))
+                    {
+                        i = 1;
+                        ipt = p.first->get_center_r(p.first->in1);
+                    }
                     inodes.push_back(&gate.in(i));
+                    i_pts.push_back(ipt);
                 }
                 else
                 {
                     control_node = &gate.out();
+                    control_point = p.first->get_center_r(*((sf::CircleShape*)p.second));
                 }
             }
             if (control_node != nullptr && (inodes.size()>0))
@@ -103,6 +128,10 @@ namespace nbi
                 auto new_edge = machine.add_edge();
                 new_edge->attach(*control_node);
                 for (auto p: inodes) new_edge->attach(*p);
+                edge_shapes_t* new_edge_shapes = new edge_shapes_t(assets, control_point, i_pts);
+                edge_shapes.push_back(new_edge_shapes);
+                shape_to_edge.insert({new_edge_shapes, new_edge});
+                edge_to_shape.insert({new_edge, new_edge_shapes});
             }
         }
         
@@ -124,6 +153,7 @@ namespace nbi
         ~canvas_t()
         {
             for (auto p: gate_shapes) delete p;
+            for (auto p: edge_shapes) delete p;
         }
     };
 }

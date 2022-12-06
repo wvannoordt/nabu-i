@@ -15,11 +15,22 @@ namespace nbi
         float r_select = 1.3;
         float r_aux  = 0.25;
         float r_rect = 0.05;
+        float outline_thick = 0.09;
+        float rotate_angle = 0.0;
         sf::Vector2f position;
         
+        sf::Vector2f get_center_r(const sf::CircleShape& sirc)
+        {
+            sf::Transform trans_loc = sf::Transform::Identity;
+            trans_loc.rotate(rotate_angle, position);
+            sf::Vector2f output = sirc.getPosition() + sirc.getRadius()*sf::Vector2f(1,1);
+            output = trans_loc.transformPoint(output);
+            return output;
+        }
         sf::Vector2f get_center(const sf::CircleShape& sirc)
         {
-            return sirc.getPosition() + sirc.getRadius()*sf::Vector2f(1,1);
+            sf::Vector2f output = sirc.getPosition() + sirc.getRadius()*sf::Vector2f(1,1);
+            return output;
         }
         
         gate_shapes_t(){}
@@ -36,7 +47,7 @@ namespace nbi
             sf::Color outl_color = assets->colors.border_color;
             auto set_style = [&](sf::Shape& s) -> void
             {
-                s.setOutlineThickness(0.09);
+                s.setOutlineThickness(outline_thick);
                 s.setFillColor(body_color);
                 s.setOutlineColor(outl_color);
             };
@@ -94,56 +105,59 @@ namespace nbi
                 rect.setPoint(2, p2 - r_rect*dx);
                 rect.setPoint(3, p1 - r_rect*dx);
             };
+            
+            sf::Vector2f pos_copy = pos;
+            // sf::Vector2f pos_copy(0,0);
             //TODO: make these not look like complete garbage
             switch(op)
             {
                 case nabu::op_id:
                 {
-                    in0.setPosition(pos.x - r - 2.8, pos.y - r);
-                    out.setPosition(pos.x - r + 2.8, pos.y - r);
+                    in0.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r);
+                    out.setPosition(pos_copy.x - r + 2.8, pos_copy.y - r);
                     body.setPointCount(3);
-                    body.setPoint(0, pos + sf::Vector2f(-1.0,  1.0));
-                    body.setPoint(1, pos + sf::Vector2f( 1.0,  0.0));
-                    body.setPoint(2, pos + sf::Vector2f(-1.0, -1.0));
+                    body.setPoint(0, pos_copy + sf::Vector2f(-1.0,  1.0));
+                    body.setPoint(1, pos_copy + sf::Vector2f( 1.0,  0.0));
+                    body.setPoint(2, pos_copy + sf::Vector2f(-1.0, -1.0));
                     create_connection(r0, get_center(in0), get_center(in0)+sf::Vector2f(2.1, 0.0));
                     create_connection(ro, get_center(out) - sf::Vector2f(2.1, 0.0), get_center(out));
                     break;
                 }
                 case nabu::op_inv:
                 {
-                    in0.setPosition(pos.x - r - 2.8, pos.y - r);
-                    out.setPosition(pos.x - r + 2.8, pos.y - r);
-                    aux.setPosition(pos + sf::Vector2f( 1.0,  0.0) - sf::Vector2f(r_aux, r_aux));
+                    in0.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r);
+                    out.setPosition(pos_copy.x - r + 2.8, pos_copy.y - r);
+                    aux.setPosition(pos_copy + sf::Vector2f( 1.0,  0.0) - sf::Vector2f(r_aux, r_aux));
                     body.setPointCount(3);
-                    body.setPoint(0, pos + sf::Vector2f(-1.0,  1.0));
-                    body.setPoint(1, pos + sf::Vector2f( 1.0,  0.0));
-                    body.setPoint(2, pos + sf::Vector2f(-1.0, -1.0));
+                    body.setPoint(0, pos_copy + sf::Vector2f(-1.0,  1.0));
+                    body.setPoint(1, pos_copy + sf::Vector2f( 1.0,  0.0));
+                    body.setPoint(2, pos_copy + sf::Vector2f(-1.0, -1.0));
                     create_connection(r0, get_center(in0), get_center(in0)+sf::Vector2f(2.1, 0.0));
                     create_connection(ro, get_center(out) - sf::Vector2f(2.1, 0.0), get_center(out));
                     break;
                 }
                 case nabu::op_or:
                 {
-                    in0.setPosition(pos.x - r - 2.8, pos.y - r - 1.0);
-                    in1.setPosition(pos.x - r - 2.8, pos.y - r + 1.0);
-                    out.setPosition(pos.x - r + 2.8, pos.y - r);
+                    in0.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r - 1.0);
+                    in1.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r + 1.0);
+                    out.setPosition(pos_copy.x - r + 2.8, pos_copy.y - r);
                     body.setPointCount(13);
                     
-                    body.setPoint(1,  pos + sf::Vector2f(-0.7,  0.9));
-                    body.setPoint(0,  pos + sf::Vector2f(-0.4,  0.4));
+                    body.setPoint(1,  pos_copy + sf::Vector2f(-0.7,  0.9));
+                    body.setPoint(0,  pos_copy + sf::Vector2f(-0.4,  0.4));
                     
-                    body.setPoint(2,  pos + sf::Vector2f(-1.0,  1.3));
-                    body.setPoint(3,  pos + sf::Vector2f(-0.5,  1.2));
-                    body.setPoint(4,  pos + sf::Vector2f( 0.3,  0.9));
-                    body.setPoint(5,  pos + sf::Vector2f( 0.8,  0.5));
-                    body.setPoint(6,  pos + sf::Vector2f( 1.0,  0.0));
-                    body.setPoint(7,  pos + sf::Vector2f( 0.8, -0.5));
-                    body.setPoint(8,  pos + sf::Vector2f( 0.3, -0.9));
-                    body.setPoint(9,  pos + sf::Vector2f(-0.5, -1.2));
-                    body.setPoint(10, pos + sf::Vector2f(-1.0, -1.3));
+                    body.setPoint(2,  pos_copy + sf::Vector2f(-1.0,  1.3));
+                    body.setPoint(3,  pos_copy + sf::Vector2f(-0.5,  1.2));
+                    body.setPoint(4,  pos_copy + sf::Vector2f( 0.3,  0.9));
+                    body.setPoint(5,  pos_copy + sf::Vector2f( 0.8,  0.5));
+                    body.setPoint(6,  pos_copy + sf::Vector2f( 1.0,  0.0));
+                    body.setPoint(7,  pos_copy + sf::Vector2f( 0.8, -0.5));
+                    body.setPoint(8,  pos_copy + sf::Vector2f( 0.3, -0.9));
+                    body.setPoint(9,  pos_copy + sf::Vector2f(-0.5, -1.2));
+                    body.setPoint(10, pos_copy + sf::Vector2f(-1.0, -1.3));
                     
-                    body.setPoint(12, pos + sf::Vector2f(-0.4, -0.4));
-                    body.setPoint(11, pos + sf::Vector2f(-0.7, -0.9));
+                    body.setPoint(12, pos_copy + sf::Vector2f(-0.4, -0.4));
+                    body.setPoint(11, pos_copy + sf::Vector2f(-0.7, -0.9));
                     
                     create_connection(r0, get_center(in0), get_center(in0)+sf::Vector2f(2.1, 0.0));
                     create_connection(r1, get_center(in1), get_center(in1)+sf::Vector2f(2.1, 0.0));
@@ -152,19 +166,19 @@ namespace nbi
                 }
                 case nabu::op_and:
                 {
-                    in0.setPosition(pos.x - r - 2.8, pos.y - r - 1.0);
-                    in1.setPosition(pos.x - r - 2.8, pos.y - r + 1.0);
-                    out.setPosition(pos.x - r + 2.8, pos.y - r);
+                    in0.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r - 1.0);
+                    in1.setPosition(pos_copy.x - r - 2.8, pos_copy.y - r + 1.0);
+                    out.setPosition(pos_copy.x - r + 2.8, pos_copy.y - r);
                     body.setPointCount(9);
-                    body.setPoint(0, pos + sf::Vector2f(-1.0,  1.3));
-                    body.setPoint(1, pos + sf::Vector2f(-0.5,  1.2));
-                    body.setPoint(2, pos + sf::Vector2f( 0.3,  0.9));
-                    body.setPoint(3, pos + sf::Vector2f( 0.8,  0.5));
-                    body.setPoint(4, pos + sf::Vector2f( 1.0,  0.0));
-                    body.setPoint(5, pos + sf::Vector2f( 0.8, -0.5));
-                    body.setPoint(6, pos + sf::Vector2f( 0.3, -0.9));
-                    body.setPoint(7, pos + sf::Vector2f(-0.5, -1.2));
-                    body.setPoint(8, pos + sf::Vector2f(-1.0, -1.3));
+                    body.setPoint(0, pos_copy + sf::Vector2f(-1.0,  1.3));
+                    body.setPoint(1, pos_copy + sf::Vector2f(-0.5,  1.2));
+                    body.setPoint(2, pos_copy + sf::Vector2f( 0.3,  0.9));
+                    body.setPoint(3, pos_copy + sf::Vector2f( 0.8,  0.5));
+                    body.setPoint(4, pos_copy + sf::Vector2f( 1.0,  0.0));
+                    body.setPoint(5, pos_copy + sf::Vector2f( 0.8, -0.5));
+                    body.setPoint(6, pos_copy + sf::Vector2f( 0.3, -0.9));
+                    body.setPoint(7, pos_copy + sf::Vector2f(-0.5, -1.2));
+                    body.setPoint(8, pos_copy + sf::Vector2f(-1.0, -1.3));
                     
                     create_connection(r0, get_center(in0), get_center(in0)+sf::Vector2f(2.1, 0.0));
                     create_connection(r1, get_center(in1), get_center(in1)+sf::Vector2f(2.1, 0.0));
@@ -174,6 +188,11 @@ namespace nbi
             }
         }
         
+        void set_rotation(const float& rot)
+        {
+            rotate_angle = rot;
+        }
+        
         sf::Vector2f get_position() const
         {
             return position;
@@ -181,14 +200,16 @@ namespace nbi
         
         void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
-            window.draw(r0, trans);
-            window.draw(ro, trans);
-            if ((op == nabu::op_or) || (op == nabu::op_and)) window.draw(r1, trans);
-            window.draw(in0, trans);
-            if ((op == nabu::op_or) || (op == nabu::op_and)) window.draw(in1, trans);
-            window.draw(body, trans);
-            if (op==nabu::op_inv) window.draw(aux, trans);
-            window.draw(out, trans);
+            sf::Transform trans_loc = trans;
+            trans_loc.rotate(rotate_angle, position);
+            window.draw(r0, trans_loc);
+            window.draw(ro, trans_loc);
+            if ((op == nabu::op_or) || (op == nabu::op_and)) window.draw(r1, trans_loc);
+            window.draw(in0, trans_loc);
+            if ((op == nabu::op_or) || (op == nabu::op_and)) window.draw(in1, trans_loc);
+            window.draw(body, trans_loc);
+            if (op==nabu::op_inv) window.draw(aux, trans_loc);
+            window.draw(out, trans_loc);
         }
         
         bool check_collide(const sf::Vector2f& pos, sf::Shape*& which_shape)
@@ -204,17 +225,17 @@ namespace nbi
                 which_shape = &body;
                 return true;
             }
-            if (condi(pos, get_center(in0), r))
+            if (condi(pos, get_center_r(in0), r))
             {
                 which_shape = &in0;
                 return true;
             }
-            if (condi(pos, get_center(out), r))
+            if (condi(pos, get_center_r(out), r))
             {
                 which_shape = &out;
                 return true;
             }
-            if ((op == nabu::op_and || op == nabu::op_or)  && condi(pos, get_center(in1), r))
+            if ((op == nabu::op_and || op == nabu::op_or)  && condi(pos, get_center_r(in1), r))
             {
                 which_shape = &in1;
                 return true;
