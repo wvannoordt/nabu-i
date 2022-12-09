@@ -12,6 +12,7 @@
 #include "canvas.h"
 #include "key.h"
 #include "mouse.h"
+#include "text_menu.h"
 
 namespace nbi
 {    
@@ -24,6 +25,7 @@ namespace nbi
         event_dispatch_t<mouse_t, void(const sf::Vector2f&, canvas_t&)> mouse_event_dispatch;
         mouse_state_t mouse_state;
         view_t view;
+        text_menu_t main_menu;
         
         control_mode current_mode = control_select;
         gate_place_mode_t gate_place_mode;
@@ -47,8 +49,14 @@ namespace nbi
                 key::ctrl + key::w,
                 std::bind(&root_window_t::on_close, this));
             key_event_dispatch.add_call(
+                key::ctrl + key::shift + key::p,
+                std::bind(&root_window_t::screenshot, this, "test.png"));
+            key_event_dispatch.add_call(
                 key::a,
                 std::bind(&root_window_t::toggle_control_mode, this, control_gate_place));
+            key_event_dispatch.add_call(
+                key::m,
+                std::bind(&root_window_t::toggle_control_mode, this, control_menu));
             key_event_dispatch.add_call(
                 key::r,
                 std::bind(&gate_place_mode_t::rotate_preview, &gate_place_mode, 1));
@@ -150,6 +158,7 @@ namespace nbi
             canvas = canvas_t(&assets);
             gate_place_mode = gate_place_mode_t(&assets);
             select_mode     = select_mode_t(&assets);
+            main_menu       = text_menu_t(&assets);
             reset_view();
             set_control_mode(control_select);
         }
@@ -158,6 +167,18 @@ namespace nbi
         {
             func(gate_place_mode);
             func(select_mode);
+            func(main_menu);
+        }
+        
+        void screenshot(const std::string& filename)
+        {
+            sf::Texture texture;
+            texture.create(window->getSize().x, window->getSize().y);
+            texture.update(*window);
+            if (!texture.copyToImage().saveToFile(filename))
+            {
+                print("ERROR", __FILE__, __LINE__);
+            }
         }
         
         void set_control_mode(const control_mode& mode)
@@ -192,6 +213,8 @@ namespace nbi
         void tick()
         {
             frame++;
+            select_mode.on_tick(frame);
+            gate_place_mode.on_tick(frame);
         }
         
         void debug_func()
@@ -205,12 +228,12 @@ namespace nbi
             select_mode.draw(*window, view.get_transform());
             canvas.draw(*window, view.get_transform());
             gate_place_mode.draw(*window, view.get_transform());
+            main_menu.draw(*window, view.get_transform());
             window->display();
         }
         
         void run()
         {
-            
             //we don't exit this loop until this window is closed, so need a thread?
             while (window->isOpen())
             {

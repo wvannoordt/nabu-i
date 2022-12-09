@@ -109,6 +109,11 @@ namespace nbi
             }
         }
         
+        void on_tick(const std::size_t& frame)
+        {
+            
+        }
+        
         void on_rclick(const sf::Vector2f& pos, canvas_t& data)
         {
             last_pos = pos;

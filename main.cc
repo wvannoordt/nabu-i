@@ -28,6 +28,7 @@ static std::string get_asset_path(int argc, char** argv, bool& failure, std::str
         print(argc, asset_dir);
     }
     asset_path /= asset_base_dir;
+    asset_path /= "profiles";
     asset_path /= asset_dir;
     if (!std::filesystem::exists(asset_path))
     {

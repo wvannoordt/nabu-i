@@ -25,14 +25,18 @@ namespace nbi
         sf::Vector2f last_pos;
         int angle = 0;
         int angle_max = 8;
+        float display_angle;
+        std::size_t angle_frame;
         
         static constexpr control_mode mode_type() {return control_gate_place;}
         
         gate_place_mode_t(){}
         gate_place_mode_t(assets_t* assets_in)
         {
+            display_angle = 0.0;
             last_pos = sf::Vector2f(0,0);
             assets = assets_in;
+            angle_frame = 0;
         }
         
         void next_op()
@@ -55,6 +59,28 @@ namespace nbi
                 index = index % ops.size();
                 preview = gate_shapes_t(ops[index], last_pos, assets);
                 preview.set_rotation(360.0*angle/(float)angle_max);
+            }
+        }
+        
+        float get_display_angle()
+        {
+            float targ_ang = 360.0*angle/(float)angle_max;
+            if (angle_frame> 100000) return targ_ang;
+            float theta    = std::exp(-0.001*angle_frame);
+            float prev_ang = display_angle;
+            return theta*prev_ang + (1.0-theta)*targ_ang;
+        }
+        
+        void on_tick(const std::size_t& frame)
+        {
+            angle_frame++;
+            if (enabled)
+            {
+                float theta    = std::exp(-0.0005*angle_frame);
+                float targ_ang = 360.0*angle/(float)angle_max;
+                float prev_ang = display_angle;
+                display_angle = theta*prev_ang + (1.0-theta)*targ_ang;
+                preview.set_rotation(display_angle);
             }
         }
         
@@ -81,10 +107,16 @@ namespace nbi
             //right_left: -1 => left
             if (enabled)
             {
+                angle_frame = 0;
+                int diff = angle;
                 angle += right_left + angle_max;
                 angle %= angle_max;
+                diff -= angle;
                 float theta = 360.0*angle/(float)angle_max;
-                preview.set_rotation(theta);
+                if (diff<-1) display_angle += 360.0;
+                if (diff>1) display_angle  -= 360.0;
+                preview.set_rotation(display_angle);
+                
             }
         }
         

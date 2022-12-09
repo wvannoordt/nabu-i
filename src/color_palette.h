@@ -16,6 +16,7 @@ namespace nbi
         sf::Color select_color;
         sf::Color preselect_color;
         sf::Color gate_color;
+        sf::Color menu_back_color;
         color_palette_t(){}
         sf::Color read_color(PTL::PropertySection& section)
         {
@@ -42,7 +43,7 @@ namespace nbi
             select_color    = read_color(section["select_color"]);
             preselect_color = read_color(section["preselect_color"]);
             gate_color      = read_color(section["gate_color"]);
-            
+            menu_back_color = read_color(section["menu_back_color"]);
         }
     };
 }

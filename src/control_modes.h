@@ -5,6 +5,7 @@ namespace nbi
     enum control_mode
     {
         control_gate_place,
-        control_select
+        control_select,
+        control_menu
     };
 }
