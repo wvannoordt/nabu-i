@@ -125,6 +125,18 @@ namespace nbi
                         data.shape_to_gate.at(hover_gate_shapes)->toggle_input(1);
                     }
                 }
+                for (auto p: selected_nodes)
+                {
+                    gate_shapes_t* shapes = p.first;
+                    if (p.second == &shapes->in0)
+                    {
+                        data.shape_to_gate.at(shapes)->toggle_input(0);
+                    }
+                    if (p.second == &shapes->in1)
+                    {
+                        data.shape_to_gate.at(shapes)->toggle_input(1);
+                    }
+                }
             }
         }
         
