@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <algorithm>
 
 #include "shape_buffer.h"
 #include "view.h"
@@ -85,11 +86,37 @@ namespace nbi
             return new_gate;
         }
         
+        void delete_edge(edge_shapes_t* edge)
+        {
+            print("AAA");
+        }
+        
+        void delete_gate(gate_shapes_t* handle)
+        {
+            nabu::gate_t* gate = shape_to_gate.at(handle);
+            auto it1 = std::find(gate_shapes.begin(), gate_shapes.end(), handle);
+            if (it1 != gate_shapes.end()) gate_shapes.erase(it1);
+            auto it2 = shape_to_gate.find(handle);
+            if (it2 != shape_to_gate.end()) shape_to_gate.erase(it2);
+            auto it3 = gate_to_shape.find(gate);
+            if (it3 != gate_to_shape.end()) gate_to_shape.erase(it3);
+            std::array<std::pair<nabu::edge_t*, bool>, 3> data = machine.remove(gate);
+            for (auto p: data)
+            {
+                if (p.second)
+                {
+                    edge_shapes_t* e_handle = edge_to_shape.at(p.first);
+                    delete_edge(e_handle);
+                }
+                //still need to handle the case of updating an edge that isn't removed
+            }
+        }
+        
         void delete_gates(std::set<gate_shapes_t*>* handles)
         {
             for (auto handle: *handles)
             {
-                
+                delete_gate(handle);
             }
         }
         
