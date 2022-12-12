@@ -87,8 +87,10 @@ namespace nbi
         
         void delete_gates(std::set<gate_shapes_t*>* handles)
         {
-            print("TODO: delete", handles->size(), "gates!!");
-            
+            for (auto handle: *handles)
+            {
+                
+            }
         }
         
         void create_edge_from_node_selection(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles)

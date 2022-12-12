@@ -17,6 +17,7 @@ namespace nbi
         sf::Color preselect_color;
         sf::Color gate_color;
         sf::Color menu_back_color;
+        sf::Color select_box_color;
         color_palette_t(){}
         sf::Color read_color(PTL::PropertySection& section)
         {
@@ -35,15 +36,16 @@ namespace nbi
         }
         void read(PTL::PropertySection& section)
         {
-            back_color      = read_color(section["back_color"]);
-            off_state_color = read_color(section["off_state_color"]);
-            on_state_color  = read_color(section["on_state_color"]);
-            bad_state_color = read_color(section["bad_state_color"]);
-            border_color    = read_color(section["border_color"]);
-            select_color    = read_color(section["select_color"]);
-            preselect_color = read_color(section["preselect_color"]);
-            gate_color      = read_color(section["gate_color"]);
-            menu_back_color = read_color(section["menu_back_color"]);
+            back_color       = read_color(section["back_color"]);
+            off_state_color  = read_color(section["off_state_color"]);
+            on_state_color   = read_color(section["on_state_color"]);
+            bad_state_color  = read_color(section["bad_state_color"]);
+            border_color     = read_color(section["border_color"]);
+            select_color     = read_color(section["select_color"]);
+            preselect_color  = read_color(section["preselect_color"]);
+            gate_color       = read_color(section["gate_color"]);
+            menu_back_color  = read_color(section["menu_back_color"]);
+            select_box_color = read_color(section["select_box_color"]);
         }
     };
 }

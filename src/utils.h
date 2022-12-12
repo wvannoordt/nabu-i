@@ -27,4 +27,24 @@ namespace nbi::utils
         detail::div_eq(p, strs...);
         return p;
     }
+    
+    template <typename tp1_t, typename tp2_t> constexpr static auto max(const tp1_t& t1, const tp2_t& t2)
+    {
+        return t1<t2?t2:t1;
+    }
+
+    template <typename tp_t, typename... tps_t> constexpr static auto max(const tp_t& t, const tps_t&... ts)
+    {
+        return max(t, max(ts...));
+    }
+
+    template <typename tp1_t, typename tp2_t> constexpr static auto min(const tp1_t& t1, const tp2_t& t2)
+    {
+        return t1<t2?t1:t2;
+    }
+
+    template <typename tp_t, typename... tps_t> constexpr static auto min(const tp_t& t, const tps_t&... ts)
+    {
+        return min(t, min(ts...));
+    }
 }

@@ -127,6 +127,10 @@ namespace nbi
                 std::bind(&view_t::on_rdrag, &view, std::placeholders::_1, std::placeholders::_2)
             );
             mouse_event_dispatch.add_call(
+                mouse_ldrag,
+                std::bind(&select_mode_t::on_ldrag, &select_mode, std::placeholders::_1, std::placeholders::_2)
+            );
+            mouse_event_dispatch.add_call(
                 mouse_move,
                 std::bind(&view_t::on_mouse_move, &view, std::placeholders::_1, std::placeholders::_2)
             );

@@ -22,8 +22,9 @@ namespace nbi
         bool enabled = false;
         gate_shapes_t* hover_gate_shapes = nullptr;
         sf::Shape* hover_shape;
-        sf::Vector2f last_pos;
+        sf::Vector2f last_pos, last_click;
         bool require_update = false;
+        bool box_selecting = false;
         assets_t* assets;
         std::set<gate_shapes_t*> selected_shapes;
         std::set<std::pair<gate_shapes_t*, sf::Shape*>> selected_nodes;
@@ -46,6 +47,7 @@ namespace nbi
         void on_lclick(const sf::Vector2f& pos, canvas_t& data)
         {
             last_pos = pos;
+            last_click = pos;
             if (enabled)
             {
                 //damn this is super ugly
@@ -96,15 +98,39 @@ namespace nbi
             }
         }
         
+        void on_ldrag(const sf::Vector2f& pos, canvas_t& data)
+        {
+            last_pos = pos;
+            if (enabled)
+            {
+                box_selecting = true;
+            }
+        }
+        
+        void select_from_box(float xmin, float xmax, float ymin, float ymax)
+        {
+            print(xmin, xmax, ymin, ymax);
+        }
+        
         void on_lrelease(const sf::Vector2f& pos, canvas_t& data)
         {
             last_pos = pos;
+            
             if (enabled)
             {
                 require_update = true;
                 if (hover_shape == nullptr || hover_gate_shapes == nullptr)
                 {
                     clear_selections();
+                }
+                if (box_selecting)
+                {
+                    float x0 = utils::min(last_click.x, last_pos.x);
+                    float x1 = utils::max(last_click.x, last_pos.x);
+                    float y0 = utils::min(last_click.y, last_pos.y);
+                    float y1 = utils::max(last_click.y, last_pos.y);
+                    select_from_box(x0, x1, y0, y1);
+                    box_selecting = false;
                 }
             }
         }
@@ -199,6 +225,22 @@ namespace nbi
             {
                 require_update = false;
                 update_colors();
+            }
+            if(box_selecting)
+            {
+                float x0 = last_click.x;
+                float y0 = last_click.y;
+                float x1 = last_pos.x;
+                float y1 = last_pos.y;
+                sf::Color select_box_color = assets->colors.select_box_color;
+                sf::Vertex line1[] = {sf::Vertex(sf::Vector2f(x0,y0), select_box_color), sf::Vertex(sf::Vector2f(x0,y1), select_box_color)};
+                sf::Vertex line2[] = {sf::Vertex(sf::Vector2f(x0,y1), select_box_color), sf::Vertex(sf::Vector2f(x1,y1), select_box_color)};
+                sf::Vertex line3[] = {sf::Vertex(sf::Vector2f(x1,y1), select_box_color), sf::Vertex(sf::Vector2f(x1,y0), select_box_color)};
+                sf::Vertex line4[] = {sf::Vertex(sf::Vector2f(x1,y0), select_box_color), sf::Vertex(sf::Vector2f(x0,y0), select_box_color)};
+                window.draw(line1, 2, sf::Lines, trans);
+                window.draw(line2, 2, sf::Lines, trans);
+                window.draw(line3, 2, sf::Lines, trans);
+                window.draw(line4, 2, sf::Lines, trans);
             }
         }
     };
