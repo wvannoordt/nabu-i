@@ -86,9 +86,17 @@ namespace nbi
             return new_gate;
         }
         
-        void delete_edge(edge_shapes_t* edge)
+        void delete_edge(edge_shapes_t* handle)
         {
-            print("AAA");
+            nabu::edge_t* edge = shape_to_edge.at(handle);
+            machine.remove(edge);
+            auto it1 = std::find(edge_shapes.begin(), edge_shapes.end(), handle);
+            edge_shapes.erase(it1);
+            auto it2 = edge_to_shape.find(edge);
+            if (it2 != edge_to_shape.end()) edge_to_shape.erase(it2);
+            auto it3 = shape_to_edge.find(handle);
+            if (it3 != shape_to_edge.end()) shape_to_edge.erase(it3);
+            delete handle;
         }
         
         void delete_gate(gate_shapes_t* handle)
@@ -105,11 +113,30 @@ namespace nbi
             {
                 if (p.second)
                 {
+                    //delete "hanging" edge
                     edge_shapes_t* e_handle = edge_to_shape.at(p.first);
                     delete_edge(e_handle);
                 }
-                //still need to handle the case of updating an edge that isn't removed
+                else if (p.first != nullptr)
+                {
+                    //we update the shapes to remove the ghost edge
+                    edge_shapes_t* e_handle = edge_to_shape.at(p.first);
+                    gate_shapes_t* ctrl_shapes = gate_to_shape.at(p.first->control->owner);
+                    sf::Vector2f control_point = ctrl_shapes->get_center_r(ctrl_shapes->out);
+                    std::vector<sf::Vector2f> i_pts;
+                    for (auto i: p.first->out)
+                    {
+                        sf::Vector2f ipt;
+                        nabu::gate_t* gate = i->owner;
+                        gate_shapes_t* ihandle = gate_to_shape.at(gate);
+                        if (i == &gate->in(0)) ipt = ihandle->get_center_r(ihandle->in0);
+                        if (i == &gate->in(1)) ipt = ihandle->get_center_r(ihandle->in1);
+                        i_pts.push_back(ipt);
+                    }
+                    *e_handle = edge_shapes_t(assets, control_point, i_pts);
+                }
             }
+            delete handle;
         }
         
         void delete_gates(std::set<gate_shapes_t*>* handles)

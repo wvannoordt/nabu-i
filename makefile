@@ -9,7 +9,7 @@ launcher := nbilaunch.x
 
 flags := 
 flags += -g
-flags += -std=c++20
+flags += -std=c++23
 
 sanny := 0
 ifeq (${sanny},1)
