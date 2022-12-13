@@ -33,6 +33,11 @@ namespace nbi
             enabled = false;
         }
         
+        void on_tick(const std::size_t& frame)
+        {
+            
+        }
+        
         void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
             if (enabled)

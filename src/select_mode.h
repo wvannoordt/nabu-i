@@ -31,6 +31,7 @@ namespace nbi
         bool multi_select = false;
         bool motion_mode = false;
         selection_type current_selection_type = any_selection;
+        canvas_t clipboard;
         
         static constexpr control_mode mode_type() {return control_select;}
         
@@ -99,6 +100,18 @@ namespace nbi
             }
         }
         
+        void copy_selected(canvas_t* source)
+        {
+            if (selected_shapes.size() == 0) return;
+            clipboard.clear();
+            source->copy_subset_to(clipboard, selected_shapes);
+        }
+        
+        void paste_clipboard(canvas_t* destination)
+        {
+            *destination += clipboard;
+        }
+        
         void on_ldrag(const sf::Vector2f& pos, canvas_t& data)
         {
             last_pos = pos;
@@ -106,11 +119,6 @@ namespace nbi
             {
                 box_selecting = (current_selection_type==any_selection) && ! motion_mode;
             }
-        }
-        
-        void select_from_box(float xmin, float xmax, float ymin, float ymax)
-        {
-            print(xmin, xmax, ymin, ymax);
         }
         
         void on_lrelease(const sf::Vector2f& pos, canvas_t& data)
@@ -131,7 +139,9 @@ namespace nbi
                     float x1 = utils::max(last_click.x, last_pos.x);
                     float y0 = utils::min(last_click.y, last_pos.y);
                     float y1 = utils::max(last_click.y, last_pos.y);
-                    select_from_box(x0, x1, y0, y1);
+                    std::vector<gate_shapes_t*> selected = data.get_shapes_in_bounding_box(x0, x1, y0, y1);
+                    clear_selections();
+                    for (auto p: selected) selected_shapes.insert(p);
                     box_selecting = false;
                 }
             }

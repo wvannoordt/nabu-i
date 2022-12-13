@@ -222,6 +222,20 @@ namespace nbi
             delete handle;
         }
         
+        std::vector<gate_shapes_t*> get_shapes_in_bounding_box(float xmin, float xmax, float ymin, float ymax)
+        {
+            std::vector<gate_shapes_t*> output;
+            //slow, optimize later
+            for (auto s: gate_shapes)
+            {
+                if (s->in_selection_bounding_box(xmin, xmax, ymin, ymax))
+                {
+                    output.push_back(s);
+                }
+            }
+            return output;
+        }
+        
         void handle_node_delete(gate_shapes_t* handle, sf::Shape* shape)
         {
             nabu::gate_t* gate = shape_to_gate.at(handle);
@@ -243,6 +257,17 @@ namespace nbi
                     else recompute_edge(e_handle);
                 }
             }
+        }
+
+        void clear()
+        {
+            machine.clear();
+            gate_shapes.clear();
+            edge_shapes.clear();
+            shape_to_gate.clear();
+            gate_to_shape.clear();
+            shape_to_edge.clear();
+            edge_to_shape.clear();
         }
         
         void delete_items(std::set<gate_shapes_t*>* handles, std::set<std::pair<gate_shapes_t*, sf::Shape*>>* nodes)
@@ -329,6 +354,16 @@ namespace nbi
             }
             shapes_out = nullptr;
             return false;
+        }
+        
+        void copy_subset_to(canvas_t& destination, std::set<gate_shapes_t*>& selection)
+        {
+            
+        }
+        
+        canvas_t& operator += (const canvas_t& rhs)
+        {
+            return *this;
         }
         
         ~canvas_t()

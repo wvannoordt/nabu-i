@@ -203,6 +203,12 @@ namespace nbi
             return position;
         }
         
+        bool in_selection_bounding_box(float xmin, float xmax, float ymin, float ymax)
+        {
+            //we require simply that the position is in the bounding box for now.
+            return (xmin < position.x) && (xmax > position.x) && (ymin < position.y) && (ymax > position.y);
+        }
+        
         void draw(sf::RenderWindow& window, const sf::Transform& trans)
         {
             sf::Transform trans_loc = trans;

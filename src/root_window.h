@@ -98,6 +98,12 @@ namespace nbi
                 key::e,
                 std::bind(&canvas_t::create_edge_from_node_selection, &canvas, &select_mode.selected_nodes));
             key_event_dispatch.add_call(
+                key::ctrl + key::c,
+                std::bind(&select_mode_t::copy_selected, &select_mode, &canvas));
+            key_event_dispatch.add_call(
+                key::ctrl + key::v,
+                std::bind(&select_mode_t::paste_clipboard, &select_mode, &canvas));
+            key_event_dispatch.add_call(
                 key::ctrl,
                 std::bind(&select_mode_t::set_multi_select, &select_mode, true));
             key_event_dispatch.add_call(
@@ -238,6 +244,7 @@ namespace nbi
             frame++;
             select_mode.on_tick(frame);
             gate_place_mode.on_tick(frame);
+            main_menu.on_tick(frame);
         }
         
         void debug_func()
