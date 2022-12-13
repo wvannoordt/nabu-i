@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <fstream>
+
 #include <SFML/Graphics.hpp>
 
 #include "control_modes.h"
@@ -31,14 +33,16 @@ namespace nbi
         gate_place_mode_t gate_place_mode;
         select_mode_t select_mode; //on by default
         
+        std::string abs_dir;
         //This holds all of the logical state of the instance
         //dealing with the shape buffer and the logical
         //topology of the nabu machine
         //interactive_instance_t instance;
         canvas_t canvas;
         
-        root_window_t(const assets_t& assets_in)
+        root_window_t(const assets_t& assets_in, const std::string& abs_dir_in)
         {
+            abs_dir = abs_dir_in;
             assets = assets_in;
             int width  = sf::VideoMode::getDesktopMode().width*0.8;
             int height = sf::VideoMode::getDesktopMode().height*0.8;
@@ -76,6 +80,9 @@ namespace nbi
                 key::esc,
                 std::bind(&root_window_t::toggle_control_mode, this, control_select));
             key_event_dispatch.add_call(
+                key::ctrl + key::s,
+                std::bind(&root_window_t::on_save, this));
+            key_event_dispatch.add_call(
                 key::esc,
                 std::bind(&select_mode_t::clear_selections, &select_mode));
             key_event_dispatch.add_call(
@@ -86,7 +93,7 @@ namespace nbi
                 std::bind(&root_window_t::reset_view, this));
             key_event_dispatch.add_call(
                 key::del,
-                std::bind(&canvas_t::delete_gates, &canvas, &select_mode.selected_shapes));
+                std::bind(&canvas_t::delete_items, &canvas, &select_mode.selected_shapes, &select_mode.selected_nodes));
             key_event_dispatch.add_call(
                 key::e,
                 std::bind(&canvas_t::create_edge_from_node_selection, &canvas, &select_mode.selected_nodes));
@@ -174,6 +181,18 @@ namespace nbi
             func(main_menu);
         }
         
+        std::string get_backup_session_filename() const
+        {
+            return utils::combine_dir(abs_dir, "data", "session.nbi");
+        }
+        
+        void on_save()
+        {
+            std::string filename = get_backup_session_filename();
+            std::ofstream session(filename);
+            canvas.write(session);
+        }
+        
         void screenshot(const std::string& filename)
         {
             sf::Texture texture;
@@ -223,7 +242,9 @@ namespace nbi
         
         void debug_func()
         {
-            
+            std::string filename = get_backup_session_filename();
+            std::ifstream session(filename);
+            canvas.read(session);
         }
         
         void render()

@@ -3,6 +3,7 @@
 mkfile_path := $(abspath $(lastword ${MAKEFILE_LIST}))
 mkfile_dir := $(dir $(mkfile_path))
 bin_dir := ${mkfile_dir}/bin
+data_dir := ${mkfile_dir}/data
 front_end := nbi
 launcher := nbilaunch.x
 
@@ -19,7 +20,7 @@ main: setup
 	g++ ${flags} -g -I./src -I${PTL}/include -I${NABU}/src main.cc -o ${bin_dir}/${launcher} -lsfml-graphics -lsfml-window -lsfml-system -L ${PTL}/lib -lPTL
 
 setup:
-	mkdir -p ${bin_dir}
+	mkdir -p ${bin_dir} ${data_dir}
 	rm -f ${bin_dir}/${front_end}
 	echo "${bin_dir}/${launcher} ${mkfile_dir} \$$1" >> ${bin_dir}/${front_end}
 	chmod +x ${bin_dir}/${front_end}

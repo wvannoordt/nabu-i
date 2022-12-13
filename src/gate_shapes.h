@@ -193,6 +193,11 @@ namespace nbi
             rotate_angle = rot;
         }
         
+        float get_rotation() const
+        {
+            return rotate_angle;
+        }
+        
         sf::Vector2f get_position() const
         {
             return position;

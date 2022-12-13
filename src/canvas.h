@@ -30,6 +30,68 @@ namespace nbi
             assets = assets_in;
         }
         
+        template <typename stream_t> stream_t& write(stream_t& stream)
+        {
+            nabu::write(machine, stream);
+            auto& all_gates = machine.get_gates();
+            stream << "\n<x>\n";
+            for (int j = 0; j < all_gates.size(); ++j)
+            {
+                gate_shapes_t* handle = gate_to_shape.at(all_gates[j]);
+                sf::Vector2f pos = handle->get_position();
+                stream << pos.x << " " << pos.y << " " << handle->get_rotation() << "\n";
+            }
+            stream << "</x>\n";
+            return stream;
+        }
+        
+        template <typename stream_t> stream_t& read(stream_t& stream)
+        {
+            //todo: handle errors
+            std::string line;
+            if (!std::getline(stream, line)) { print("ERR", __FILE__, __LINE__); abort(); }
+            {std::istringstream iss(line); nabu::read(machine, iss);}
+            auto& all_gates = machine.get_gates();
+            if (!std::getline(stream, line)) { print("ERR", __FILE__, __LINE__); abort(); }
+            if (line != "<x>") { print("ERR", __FILE__, __LINE__, line); abort(); }
+            for (int j = 0; j < all_gates.size(); j++)
+            {
+                if (!std::getline(stream, line)) { print("ERR", __FILE__, __LINE__); abort(); }
+                sf::Vector2f pos;
+                float angl;
+                std::istringstream iss(line);
+                iss >> pos.x;
+                iss >> pos.y;
+                iss >> angl;
+                gate_shapes_t* shapes = add_gate(all_gates[j], pos, angl);
+                if (iss.fail())  { print("ERR", __FILE__, __LINE__); abort(); }
+            }
+            if (!std::getline(stream, line)) { print("ERR", __FILE__, __LINE__); abort(); }
+            if (line != "</x>") { print("ERR", __FILE__, __LINE__); abort(); }
+            
+            //add edges
+            auto& all_edges = machine.get_edges();
+            for (int j = 0; j < all_edges.size(); ++j)
+            {
+                nabu::edge_t* edge = all_edges[j];
+                std::set<std::pair<gate_shapes_t*, sf::Shape*>> handles;
+                gate_shapes_t* c_handle = gate_to_shape.at(edge->control->owner);
+                handles.insert({c_handle, &c_handle->out});
+                for (auto inode: edge->out)
+                {
+                    std::pair<gate_shapes_t*, sf::Shape*> data;
+                    nabu::gate_t* gate = inode->owner;
+                    data.first = gate_to_shape.at(gate);
+                    if (inode == &gate->in(0)) data.second = &data.first->in0;
+                    if (inode == &gate->in(1)) data.second = &data.first->in1;
+                    handles.insert(data);
+                }
+                create_edge_from_node_selection_i(&handles, edge);
+            }
+            
+            return stream;
+        }
+        
         void update_colors()
         {
             auto updcl = [&](const nabu::state& state_in, sf::Shape& shp) -> void
@@ -86,6 +148,21 @@ namespace nbi
             return new_gate;
         }
         
+        gate_shapes_t* add_gate(nabu::gate_t* gate, const sf::Vector2f& position, const float& angle)
+        {
+            gate_shapes_t* shapes = new gate_shapes_t(gate->gate_operation, position, assets);
+            gate_shapes.push_back(shapes);
+            nabu::gate_t* new_gate = gate;
+            
+            //need to keep track of the correspondence between gates and the shapes that they 
+            gate_shapes_t* new_shapes = shapes;
+            shape_to_gate.insert({new_shapes, new_gate});
+            gate_to_shape.insert({new_gate, new_shapes});
+            last_added_gate = gate;
+            new_shapes->set_rotation(angle);
+            return new_shapes;
+        }
+        
         void delete_edge(edge_shapes_t* handle)
         {
             nabu::edge_t* edge = shape_to_edge.at(handle);
@@ -97,6 +174,24 @@ namespace nbi
             auto it3 = shape_to_edge.find(handle);
             if (it3 != shape_to_edge.end()) shape_to_edge.erase(it3);
             delete handle;
+        }
+        
+        void recompute_edge(edge_shapes_t* handle)
+        {
+            nabu::edge_t* edge = shape_to_edge.at(handle);
+            gate_shapes_t* ctrl_shapes = gate_to_shape.at(edge->control->owner);
+            sf::Vector2f control_point = ctrl_shapes->get_center_r(ctrl_shapes->out);
+            std::vector<sf::Vector2f> i_pts;
+            for (auto i: edge->out)
+            {
+                sf::Vector2f ipt;
+                nabu::gate_t* gate = i->owner;
+                gate_shapes_t* ihandle = gate_to_shape.at(gate);
+                if (i == &gate->in(0)) ipt = ihandle->get_center_r(ihandle->in0);
+                if (i == &gate->in(1)) ipt = ihandle->get_center_r(ihandle->in1);
+                i_pts.push_back(ipt);
+            }
+            *handle = edge_shapes_t(assets, control_point, i_pts);
         }
         
         void delete_gate(gate_shapes_t* handle)
@@ -121,33 +216,61 @@ namespace nbi
                 {
                     //we update the shapes to remove the ghost edge
                     edge_shapes_t* e_handle = edge_to_shape.at(p.first);
-                    gate_shapes_t* ctrl_shapes = gate_to_shape.at(p.first->control->owner);
-                    sf::Vector2f control_point = ctrl_shapes->get_center_r(ctrl_shapes->out);
-                    std::vector<sf::Vector2f> i_pts;
-                    for (auto i: p.first->out)
-                    {
-                        sf::Vector2f ipt;
-                        nabu::gate_t* gate = i->owner;
-                        gate_shapes_t* ihandle = gate_to_shape.at(gate);
-                        if (i == &gate->in(0)) ipt = ihandle->get_center_r(ihandle->in0);
-                        if (i == &gate->in(1)) ipt = ihandle->get_center_r(ihandle->in1);
-                        i_pts.push_back(ipt);
-                    }
-                    *e_handle = edge_shapes_t(assets, control_point, i_pts);
+                    recompute_edge(e_handle);
                 }
             }
             delete handle;
         }
         
-        void delete_gates(std::set<gate_shapes_t*>* handles)
+        void handle_node_delete(gate_shapes_t* handle, sf::Shape* shape)
         {
-            for (auto handle: *handles)
+            nabu::gate_t* gate = shape_to_gate.at(handle);
+            if (shape == &handle->out && gate->output.edge != nullptr)
             {
-                delete_gate(handle);
+                edge_shapes_t* e_handle = edge_to_shape.at(gate->output.edge);
+                delete_edge(e_handle);
+            }
+            else
+            {
+                nabu::inode_t* inode = nullptr;
+                if (shape == &handle->in0) inode = &gate->in(0);
+                if (shape == &handle->in1) inode = &gate->in(1);
+                nabu::edge_t* edge = inode->edge;
+                if (edge != nullptr)
+                {
+                    edge_shapes_t* e_handle = edge_to_shape.at(edge);
+                    if (edge->detach(*inode)) delete_edge(e_handle);
+                    else recompute_edge(e_handle);
+                }
+            }
+        }
+        
+        void delete_items(std::set<gate_shapes_t*>* handles, std::set<std::pair<gate_shapes_t*, sf::Shape*>>* nodes)
+        {
+            if (handles->size() > 0)
+            {
+                for (auto handle: *handles)
+                {
+                    delete_gate(handle);
+                }
+                handles->clear();
+            }
+            if (nodes->size() > 0)
+            {
+                for (auto p: *nodes)
+                {
+                    handle_node_delete(p.first, p.second);
+                    p.first->deselect(assets);
+                }
+                nodes->clear();
             }
         }
         
         void create_edge_from_node_selection(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles)
+        {
+            create_edge_from_node_selection_i(handles, nullptr);
+        }
+        void create_edge_from_node_selection_i(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles, nabu::edge_t* edge_in)
         {
             nabu::onode_t* control_node = nullptr;
             std::vector<nabu::inode_t*> inodes;
@@ -181,7 +304,9 @@ namespace nbi
             }
             if (control_node != nullptr && (inodes.size()>0))
             {
-                auto new_edge = machine.add_edge();
+                nabu::edge_t* new_edge;
+                if (edge_in == nullptr) new_edge = machine.add_edge();
+                else new_edge = edge_in;
                 new_edge->attach(*control_node);
                 for (auto p: inodes) new_edge->attach(*p);
                 edge_shapes_t* new_edge_shapes = new edge_shapes_t(assets, control_point, i_pts);

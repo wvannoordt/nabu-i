@@ -38,10 +38,34 @@ static std::string get_asset_path(int argc, char** argv, bool& failure, std::str
     return std::string(asset_path);
 }
 
+static std::string get_base_path(int argc, char** argv, bool& failure, std::string& fail_message)
+{
+    failure = false;
+    fail_message = "no error";
+    std::string nbi_path = "NOPATH";
+    if (argc>1)
+    {
+        nbi_path = std::string(argv[1]);
+    }
+    else
+    {
+        failure = true;
+        fail_message = "Did not specify program root path";
+        return "ERR";
+    }
+    return nbi_path;
+}
+
 int main(int argc, char** argv)
 {
     bool failure;
     std::string er_msg;
+    std::string base_path = get_base_path(argc, argv, failure, er_msg);
+    if (failure)
+    {
+        print(er_msg);
+        return 1;
+    }
     std::string full_asset_path = get_asset_path(argc, argv, failure, er_msg);
     if (failure)
     {
@@ -49,7 +73,7 @@ int main(int argc, char** argv)
         return 1;
     }
     nbi::assets_t nbi_assets(full_asset_path);
-    nbi::root_window_t app(nbi_assets);
+    nbi::root_window_t app(nbi_assets, base_path);
     app.run();
     return 0;
 }

@@ -29,6 +29,7 @@ namespace nbi
         std::set<gate_shapes_t*> selected_shapes;
         std::set<std::pair<gate_shapes_t*, sf::Shape*>> selected_nodes;
         bool multi_select = false;
+        bool motion_mode = false;
         selection_type current_selection_type = any_selection;
         
         static constexpr control_mode mode_type() {return control_select;}
@@ -103,7 +104,7 @@ namespace nbi
             last_pos = pos;
             if (enabled)
             {
-                box_selecting = true;
+                box_selecting = (current_selection_type==any_selection) && ! motion_mode;
             }
         }
         
@@ -119,10 +120,11 @@ namespace nbi
             if (enabled)
             {
                 require_update = true;
-                if (hover_shape == nullptr || hover_gate_shapes == nullptr)
+                if (hover_shape == nullptr || hover_gate_shapes == nullptr && !motion_mode)
                 {
                     clear_selections();
                 }
+                if (motion_mode) motion_mode = false;
                 if (box_selecting)
                 {
                     float x0 = utils::min(last_click.x, last_pos.x);

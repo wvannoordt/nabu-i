@@ -12,9 +12,9 @@ namespace nbi
         color_palette_t colors;
         
         assets_t(){}
-        assets_t(const std::string& abs_dir)
+        assets_t(const std::string& asset_dir)
         {
-            colors.read(utils::combine_dir(abs_dir, "colors.ptl"));
+            colors.read(utils::combine_dir(asset_dir, "colors.ptl"));
         }
     };
 }
