@@ -133,7 +133,7 @@ namespace nbi
             }
         }
         
-        nabu::gate_t* add_gate(const nabu::operation& oper, const sf::Vector2f& position, const float& angle)
+        gate_shapes_t* add_gate(const nabu::operation& oper, const sf::Vector2f& position, const float& angle)
         {
             gate_shapes_t* shapes = new gate_shapes_t(oper, position, assets);
             gate_shapes.push_back(shapes);
@@ -145,7 +145,7 @@ namespace nbi
             gate_to_shape.insert({new_gate, new_shapes});
             last_added_gate = new_gate;
             new_shapes->set_rotation(angle);
-            return new_gate;
+            return shapes;
         }
         
         gate_shapes_t* add_gate(nabu::gate_t* gate, const sf::Vector2f& position, const float& angle)
@@ -295,7 +295,7 @@ namespace nbi
         {
             create_edge_from_node_selection_i(handles, nullptr);
         }
-        void create_edge_from_node_selection_i(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles, nabu::edge_t* edge_in)
+        edge_shapes_t* create_edge_from_node_selection_i(std::set<std::pair<gate_shapes_t*, sf::Shape*>>* handles, nabu::edge_t* edge_in)
         {
             nabu::onode_t* control_node = nullptr;
             std::vector<nabu::inode_t*> inodes;
@@ -338,7 +338,9 @@ namespace nbi
                 edge_shapes.push_back(new_edge_shapes);
                 shape_to_edge.insert({new_edge_shapes, new_edge});
                 edge_to_shape.insert({new_edge, new_edge_shapes});
+                return new_edge_shapes;
             }
+            return nullptr;
         }
         
         //todo: optimize this using bounding boxes!
@@ -356,20 +358,54 @@ namespace nbi
             return false;
         }
         
-        void copy_subset_to(canvas_t& destination, std::set<gate_shapes_t*>& selection)
-        {
-            
-        }
-        
-        canvas_t& operator += (const canvas_t& rhs)
-        {
-            return *this;
-        }
-        
         ~canvas_t()
         {
             for (auto p: gate_shapes) delete p;
             for (auto p: edge_shapes) delete p;
         }
     };
+    
+    template <typename condition_t> std::set<gate_shapes_t*>
+    copy_canvas(canvas_t& source, canvas_t& destination, const condition_t& condition, const sf::Vector2f& offset = sf::Vector2f(0,0))
+    {
+        std::map<gate_shapes_t*, gate_shapes_t*> shape_table;
+        std::set<gate_shapes_t*> output;
+        for (auto prev: source.gate_shapes)
+        {
+            if (condition(prev))
+            {
+                auto next = destination.add_gate(prev->op, prev->get_position() + offset, prev->get_rotation());
+                shape_table.insert({prev, next});
+                nabu::gate_t* old_gate = source.shape_to_gate.at(prev);
+                nabu::gate_t* new_gate = destination.shape_to_gate.at(next);
+                new_gate->out().node_state = old_gate->out().node_state;
+                new_gate->in(0).node_state = old_gate->in(0).node_state;
+                new_gate->in(1).node_state = old_gate->in(1).node_state;
+                output.insert(next);
+            }
+        }
+        for (auto entry: shape_table)
+        {
+            nabu::edge_t* edge = source.shape_to_gate.at(entry.first)->out().edge;
+            if (edge != nullptr)
+            {
+                std::set<std::pair<gate_shapes_t*, sf::Shape*>> handles;
+                handles.insert({entry.second, &entry.second->out});
+                for (auto inode: edge->out)
+                {
+                    nabu::gate_t* igate = inode->owner;
+                    gate_shapes_t* ishapes = source.gate_to_shape.at(igate);
+                    if (condition(ishapes))
+                    {
+                        gate_shapes_t* n_ishapes = shape_table.at(ishapes);
+                        sf::Shape* shp = &n_ishapes->in0;
+                        if (inode == &igate->in(1)) shp = &n_ishapes->in1;
+                        handles.insert({n_ishapes, shp});
+                    }
+                }
+                destination.create_edge_from_node_selection(&handles);
+            }
+        }
+        return output;
+    }
 }

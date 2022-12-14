@@ -101,6 +101,9 @@ namespace nbi
                 key::ctrl + key::c,
                 std::bind(&select_mode_t::copy_selected, &select_mode, &canvas));
             key_event_dispatch.add_call(
+                key::ctrl + key::x,
+                std::bind(&select_mode_t::cut_selected, &select_mode, &canvas));
+            key_event_dispatch.add_call(
                 key::ctrl + key::v,
                 std::bind(&select_mode_t::paste_clipboard, &select_mode, &canvas));
             key_event_dispatch.add_call(

@@ -29,9 +29,10 @@ namespace nbi
         std::set<gate_shapes_t*> selected_shapes;
         std::set<std::pair<gate_shapes_t*, sf::Shape*>> selected_nodes;
         bool multi_select = false;
-        bool motion_mode = false;
         selection_type current_selection_type = any_selection;
+        
         canvas_t clipboard;
+        sf::Vector2f current_offset, offset_increment;
         
         static constexpr control_mode mode_type() {return control_select;}
         
@@ -39,6 +40,9 @@ namespace nbi
         select_mode_t(assets_t* assets_in)
         {
             assets = assets_in;
+            offset_increment = sf::Vector2f(15.0, 15.0);
+            current_offset = offset_increment;
+            clipboard = canvas_t(assets_in);
         }
         
         void set_multi_select(bool val) {multi_select = val;}
@@ -100,16 +104,36 @@ namespace nbi
             }
         }
         
+        void cut_selected(canvas_t* source)
+        {
+            if (selected_shapes.size() == 0) return;
+            copy_selected(source);
+            source->delete_items(&selected_shapes, &selected_nodes);
+            current_offset = sf::Vector2f(0,0);
+        }
+        
         void copy_selected(canvas_t* source)
         {
             if (selected_shapes.size() == 0) return;
             clipboard.clear();
-            source->copy_subset_to(clipboard, selected_shapes);
+            current_offset = offset_increment;
+            auto condition = [&](gate_shapes_t* shapes) -> bool
+            {
+                return selected_shapes.find(shapes) != selected_shapes.end();
+            };
+            copy_canvas(*source, clipboard, condition);
         }
         
         void paste_clipboard(canvas_t* destination)
         {
-            *destination += clipboard;
+            clear_selections();
+            auto condition = [&](gate_shapes_t* shapes) -> bool
+            {
+                return true;
+            };
+            selected_shapes = copy_canvas(clipboard, *destination, condition, current_offset);
+            require_update = true;
+            current_offset += offset_increment;
         }
         
         void on_ldrag(const sf::Vector2f& pos, canvas_t& data)
@@ -117,7 +141,7 @@ namespace nbi
             last_pos = pos;
             if (enabled)
             {
-                box_selecting = (current_selection_type==any_selection) && ! motion_mode;
+                box_selecting = true;
             }
         }
         
@@ -128,11 +152,10 @@ namespace nbi
             if (enabled)
             {
                 require_update = true;
-                if (hover_shape == nullptr || hover_gate_shapes == nullptr && !motion_mode)
+                if (hover_shape == nullptr || hover_gate_shapes == nullptr)
                 {
                     clear_selections();
                 }
-                if (motion_mode) motion_mode = false;
                 if (box_selecting)
                 {
                     float x0 = utils::min(last_click.x, last_pos.x);
