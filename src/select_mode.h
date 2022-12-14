@@ -34,6 +34,9 @@ namespace nbi
         canvas_t clipboard;
         sf::Vector2f current_offset, offset_increment;
         
+        bool motion_moved = false;
+        bool motion_mode  = false;
+        
         static constexpr control_mode mode_type() {return control_select;}
         
         select_mode_t(){}
@@ -56,51 +59,7 @@ namespace nbi
             last_click = pos;
             if (enabled)
             {
-                //damn this is super ugly
-                require_update = true;
-                if (hover_shape != nullptr && hover_gate_shapes != nullptr)
-                {
-                    //if only one selection, we can select the other type without multi-select!
-                    if (!multi_select && (selected_shapes.size() + selected_nodes.size())==1) current_selection_type = any_selection;
-                    
-                    // if we click on a type of thing with a group of the other
-                    // thing selected and are not attempting multi-select, clear and select that thing
-                    if (!multi_select && (hover_shape == &hover_gate_shapes->body) && current_selection_type==node_selection) clear_selections();
-                    if (!multi_select && (hover_shape != &hover_gate_shapes->body) && current_selection_type==body_selection) clear_selections();
-                    if ((hover_shape == &hover_gate_shapes->body) && ((current_selection_type == body_selection) || (current_selection_type == any_selection)))
-                    {
-                        auto it = selected_shapes.find(hover_gate_shapes);
-                        if (it == selected_shapes.end())
-                        {
-                            if (!multi_select) clear_selections();
-                            current_selection_type = body_selection;
-                            selected_shapes.insert(hover_gate_shapes);
-                        }
-                        else
-                        {
-                            selected_shapes.erase(it);
-                            current_selection_type = body_selection;
-                            if (selected_shapes.size()==0) current_selection_type = any_selection;
-                        }
-                    }
-                    else if ((hover_shape != &hover_gate_shapes->body) && (current_selection_type == node_selection) || (current_selection_type == any_selection))
-                    {
-                        std::pair<gate_shapes_t*, sf::Shape*> elem = {hover_gate_shapes, hover_shape};
-                        auto it = selected_nodes.find(elem);
-                        if (it == selected_nodes.end())
-                        {
-                            if (!multi_select) clear_selections();
-                            current_selection_type = node_selection;
-                            selected_nodes.insert(elem);
-                        }
-                        else
-                        {
-                            selected_nodes.erase(elem);
-                            current_selection_type = node_selection;
-                            if (selected_nodes.size()==0) current_selection_type = any_selection;
-                        }
-                    }
-                }
+                motion_mode = ((hover_gate_shapes != nullptr) && (selected_shapes.size() > 0));
             }
         }
         
@@ -138,11 +97,29 @@ namespace nbi
         
         void on_ldrag(const sf::Vector2f& pos, canvas_t& data)
         {
-            last_pos = pos;
             if (enabled)
             {
-                box_selecting = true;
+                if (motion_mode) motion_moved = true;
+                box_selecting = (((selected_shapes.size() == 0) || multi_select) && !motion_mode);
+                if (motion_moved)
+                {
+                    sf::Vector2f dx = last_pos - pos;
+                    for (auto p: selected_shapes)
+                    {
+                        auto xx = p->get_position();
+                        xx -= dx;
+                        p->set_position(xx);
+                        nabu::gate_t* gate = data.shape_to_gate.at(p);
+                        nabu::edge_t* e_out = gate->out().edge;
+                        nabu::edge_t* e_in0 = gate->in(0).edge;
+                        nabu::edge_t* e_in1 = gate->in(1).edge;
+                        if (e_out != nullptr) data.recompute_edge(e_out);
+                        if (e_in0 != nullptr) data.recompute_edge(e_in0);
+                        if (e_in1 != nullptr) data.recompute_edge(e_in1);
+                    }
+                }
             }
+            last_pos = pos;
         }
         
         void on_lrelease(const sf::Vector2f& pos, canvas_t& data)
@@ -151,10 +128,59 @@ namespace nbi
             
             if (enabled)
             {
+                //damn this is super ugly
                 require_update = true;
-                if (hover_shape == nullptr || hover_gate_shapes == nullptr)
+                if ((hover_shape == nullptr || hover_gate_shapes == nullptr) && !multi_select && !motion_moved)
                 {
                     clear_selections();
+                }
+                if (hover_shape != nullptr && hover_gate_shapes != nullptr)
+                {
+                    //if only one selection, we can select the other type without multi-select!
+                    if (!multi_select && (selected_shapes.size() + selected_nodes.size())==1) current_selection_type = any_selection;
+                    
+                    // if we click on a type of thing with a group of the other
+                    // thing selected and are not attempting multi-select, clear and select that thing
+                    if (!motion_moved && !multi_select && (hover_shape == &hover_gate_shapes->body) && current_selection_type==node_selection) clear_selections();
+                    if (!motion_moved && !multi_select && (hover_shape != &hover_gate_shapes->body) && current_selection_type==body_selection) clear_selections();
+                    if ((hover_shape == &hover_gate_shapes->body) && ((current_selection_type == body_selection) || (current_selection_type == any_selection)))
+                    {
+                        auto it = selected_shapes.find(hover_gate_shapes);
+                        if (!motion_moved)
+                        {
+                            if (it == selected_shapes.end())
+                            {
+                                if (!multi_select && !motion_moved) clear_selections();
+                                current_selection_type = body_selection;
+                                selected_shapes.insert(hover_gate_shapes);
+                            }
+                            else
+                            {
+                                selected_shapes.erase(it);
+                                current_selection_type = body_selection;
+                                if (selected_shapes.size()==0) current_selection_type = any_selection;
+                            }
+                        }
+                    }
+                    else if ((hover_shape != &hover_gate_shapes->body) && (current_selection_type == node_selection) || (current_selection_type == any_selection))
+                    {
+                        std::pair<gate_shapes_t*, sf::Shape*> elem = {hover_gate_shapes, hover_shape};
+                        auto it = selected_nodes.find(elem);
+                        if (it == selected_nodes.end())
+                        {
+                            if (!multi_select && !motion_moved) clear_selections();
+                            current_selection_type = node_selection;
+                            selected_nodes.insert(elem);
+                        }
+                        else
+                        {
+                            selected_nodes.erase(elem);
+                            current_selection_type = node_selection;
+                            if (selected_nodes.size()==0) current_selection_type = any_selection;
+                        }
+                    }
+                    motion_moved = false;
+                    motion_mode = false;
                 }
                 if (box_selecting)
                 {
@@ -163,7 +189,7 @@ namespace nbi
                     float y0 = utils::min(last_click.y, last_pos.y);
                     float y1 = utils::max(last_click.y, last_pos.y);
                     std::vector<gate_shapes_t*> selected = data.get_shapes_in_bounding_box(x0, x1, y0, y1);
-                    clear_selections();
+                    if ((!multi_select || selected_nodes.size() > 0) && !motion_moved) clear_selections();
                     for (auto p: selected) selected_shapes.insert(p);
                     box_selecting = false;
                 }

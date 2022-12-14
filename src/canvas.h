@@ -176,6 +176,11 @@ namespace nbi
             delete handle;
         }
         
+        void recompute_edge(nabu::edge_t* edge)
+        {
+            recompute_edge(edge_to_shape.at(edge));
+        }
+        
         void recompute_edge(edge_shapes_t* handle)
         {
             nabu::edge_t* edge = shape_to_edge.at(handle);
