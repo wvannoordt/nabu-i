@@ -291,8 +291,8 @@ namespace nbi
                     {
                         key_event_dispatch.dispatch(key::ctrl + key::w);
                     }
+                    this->render();
                 }
-                this->render();
             }
         }
     };
