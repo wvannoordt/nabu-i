@@ -53,5 +53,14 @@ or uninitialized state.
 While hovering over a node, you can select it by clicking it.
 ![Node select](https://github.com/wvannoordt/nbi/blob/main/doc/img/nodeselect.png?raw=true)
 
+Holding `control` and clicking another node will select it as well.
+![Node select 2](https://github.com/wvannoordt/nbi/blob/main/doc/img/nodeselect2.png?raw=true)
+
+By pressing `e`, you can create an edge that links the two nodes.
+![Edge create](https://github.com/wvannoordt/nbi/blob/main/doc/img/edgecreate.png?raw=true)
+
+You can create edges that link one output node to multiple input nodes, but not the other way around.
+![Edge create 2](https://github.com/wvannoordt/nbi/blob/main/doc/img/edgecreate2.png?raw=true)
+
 # License
 [GNU GENERAL PUBLIC LICENSE](https://choosealicense.com/licenses/gpl-3.0/)
